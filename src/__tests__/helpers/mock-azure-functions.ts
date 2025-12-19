@@ -20,7 +20,7 @@ export function createMockHttpRequest(
     user: null,
     text: async () => (body ? JSON.stringify(body) : ""),
     json: async () => body || {},
-    formData: async () => ({} as any),
+    formData: async () => ({}) as any,
     arrayBuffer: async () => new ArrayBuffer(0),
     blob: async () => new Blob(),
   } as HttpRequest;
@@ -53,4 +53,3 @@ export function createMockInvocationContext(): InvocationContext {
     done: vi.fn(),
   } as InvocationContext;
 }
-
