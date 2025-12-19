@@ -11,4 +11,3 @@ app.http("listModels", {
   authLevel: "function",
   handler: listModelsHandler,
 });
-

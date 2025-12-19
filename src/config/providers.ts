@@ -3,7 +3,7 @@ import { ProviderConfig } from "../providers/types";
 
 /**
  * Provider Environment Configuration
- * 
+ *
  * Loads and validates provider configurations from environment variables
  */
 export interface ProviderEnvConfig {
@@ -35,15 +35,15 @@ export function loadProviderConfig(): ProviderEnvConfig {
   const endpointUrl = process.env.AZURE_OPENAI_ENDPOINT || "";
   let endpoint = endpointUrl;
   let deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-  
+
   // If endpoint contains /deployments/, extract it
-  const deploymentMatch = endpointUrl.match(/\/deployments\/([^\/]+)/);
+  const deploymentMatch = endpointUrl.match(/\/deployments\/([^/]+)/);
   if (deploymentMatch && !deployment) {
     deployment = deploymentMatch[1];
     // Remove deployment from endpoint URL
-    endpoint = endpointUrl.replace(/\/deployments\/[^\/]+/, "");
+    endpoint = endpointUrl.replace(/\/deployments\/[^/]+/, "");
   }
-  
+
   // If endpoint contains /chat/completions, remove it
   endpoint = endpoint.replace(/\/chat\/completions.*$/, "");
   endpoint = endpoint.replace(/\?.*$/, "");
@@ -138,4 +138,3 @@ export function buildProviderConfig(
       throw new Error(`Unknown provider: ${provider}`);
   }
 }
-

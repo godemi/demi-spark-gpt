@@ -1,8 +1,4 @@
-import {
-  ChatMessage,
-  HistoryStrategy,
-  SparkGPTProcessedParametersType,
-} from "../models/types";
+import { ChatMessage, HistoryStrategy, SparkGPTProcessedParametersType } from "../models/types";
 
 const estimateTokens = (text: string): number => Math.ceil(text.length / 4);
 
@@ -47,9 +43,7 @@ const applyHistoryStrategy = (
   return sorted.slice(-historyWindow);
 };
 
-export const buildChatMessages = (
-  params: SparkGPTProcessedParametersType
-): ChatMessage[] => {
+export const buildChatMessages = (params: SparkGPTProcessedParametersType): ChatMessage[] => {
   const messages: ChatMessage[] = [];
 
   const systemPrompts = params.system_prompt

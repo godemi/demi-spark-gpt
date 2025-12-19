@@ -244,7 +244,7 @@ export interface JSONObject {
   [key: string]: JSONValue;
 }
 
-export interface JSONArray extends Array<JSONValue> {}
+export type JSONArray = JSONValue[];
 
 /**
  * AzureChatGPTResponse represents the structured response from an Azure OpenAI request,

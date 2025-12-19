@@ -3,10 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { processInputAttachments } from "../attachments/inputProcessor";
 import { buildProviderConfig } from "../config/providers";
 import { applyGuardrails } from "../guardrails/profiles";
-import {
-    ChatCompletionRequest,
-    ChatCompletionRequestSchema,
-} from "../models/chatCompletionTypes";
+import { ChatCompletionRequest, ChatCompletionRequestSchema } from "../models/chatCompletionTypes";
 import { logError, logRequest, logResponse } from "../observability/logger";
 import { telemetry } from "../observability/telemetry";
 import { getProviderAdapter } from "../providers";
@@ -16,7 +13,7 @@ import { addCorsHeaders } from "../utils/httpJsonResponse";
 
 /**
  * Handles POST /v1/chat/completions requests
- * 
+ *
  * Main HALO layer endpoint for chat completions with:
  * - Multi-provider routing
  * - Streaming and non-streaming support
@@ -38,7 +35,7 @@ export const chatCompletionsHandler = async (
 
   const startTime = Date.now();
   const requestId = uuidv4();
-  let chatRequest: ChatCompletionRequest;
+  let chatRequest: ChatCompletionRequest | undefined;
 
   try {
     // Parse request body
@@ -70,7 +67,7 @@ export const chatCompletionsHandler = async (
     const validationResult = ChatCompletionRequestSchema.safeParse(requestJson);
     if (!validationResult.success) {
       const errors = validationResult.error.issues
-        .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+        .map(issue => `${issue.path.join(".")}: ${issue.message}`)
         .join("; ");
       throw new APIException(
         `Invalid request parameters: ${errors}`,
@@ -111,7 +108,7 @@ export const chatCompletionsHandler = async (
     }
 
     // Check if model supports requested features
-    if (chatRequest.messages.some((m) => m.attachments?.length)) {
+    if (chatRequest.messages.some(m => m.attachments?.length)) {
       if (!capabilities.vision) {
         throw new APIException(
           `Model ${chatRequest.model} does not support vision/attachments`,
@@ -156,19 +153,13 @@ export const chatCompletionsHandler = async (
 
     // Process attachments
     let processedMessages = chatRequest.messages;
-    if (chatRequest.messages.some((m) => m.attachments?.length)) {
-      processedMessages = await processInputAttachments(
-        chatRequest.messages,
-        capabilities
-      );
+    if (chatRequest.messages.some(m => m.attachments?.length)) {
+      processedMessages = await processInputAttachments(chatRequest.messages, capabilities);
     }
 
     // Apply guardrails if enabled
     if (chatRequest.system_guardrails_enabled && chatRequest.guardrail_profile) {
-      processedMessages = applyGuardrails(
-        processedMessages,
-        chatRequest.guardrail_profile
-      );
+      processedMessages = applyGuardrails(processedMessages, chatRequest.guardrail_profile);
     }
 
     // Log request
@@ -178,7 +169,7 @@ export const chatCompletionsHandler = async (
       provider,
       messageCount: processedMessages.length,
       stream: chatRequest.stream || false,
-      hasAttachments: chatRequest.messages.some((m) => m.attachments?.length),
+      hasAttachments: chatRequest.messages.some(m => m.attachments?.length),
     });
 
     // Build provider request
@@ -215,8 +206,8 @@ export const chatCompletionsHandler = async (
       logError(context, error, requestId);
       telemetry.trackRequest({
         requestId,
-        model: chatRequest!?.model || "unknown",
-        provider: chatRequest!?.provider || "unknown",
+        model: chatRequest?.model || "unknown",
+        provider: chatRequest?.provider || "unknown",
         latencyMs,
         promptTokens: 0,
         completionTokens: 0,
@@ -346,4 +337,3 @@ async function handleNonStreaming(
     headers: addCorsHeaders({ "Content-Type": "application/json" }),
   };
 }
-

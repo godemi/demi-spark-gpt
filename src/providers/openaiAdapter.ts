@@ -5,17 +5,12 @@ import {
   SSEChunk,
   ChatMessage,
 } from "../models/chatCompletionTypes";
-import {
-  ProviderAdapter,
-  ProviderConfig,
-  ProviderRequest,
-  ModelCapabilities,
-} from "./types";
+import { ProviderAdapter, ProviderConfig, ProviderRequest, ModelCapabilities } from "./types";
 import { getModelCapabilities } from "./modelRegistry";
 
 /**
  * OpenAI Provider Adapter
- * 
+ *
  * Handles requests to OpenAI's direct API with support for:
  * - API key authentication
  * - Streaming and non-streaming responses
@@ -30,7 +25,7 @@ export class OpenAIAdapter implements ProviderAdapter {
    */
   private getClient(config: ProviderConfig): OpenAI {
     const key = `${config.apiKey}-${config.organization || "default"}`;
-    
+
     if (this.clients.has(key)) {
       return this.clients.get(key)!;
     }
@@ -83,17 +78,14 @@ export class OpenAIAdapter implements ProviderAdapter {
     return request;
   }
 
-  async *executeStream(
-    request: ProviderRequest,
-    config: ProviderConfig
-  ): AsyncIterable<SSEChunk> {
+  async *executeStream(request: ProviderRequest, config: ProviderConfig): AsyncIterable<SSEChunk> {
     const client = this.getClient(config);
-    
+
     try {
-      const stream = await client.chat.completions.create({
+      const stream = (await client.chat.completions.create({
         ...request,
         stream: true,
-      } as any) as unknown as AsyncIterable<any>;
+      } as any)) as unknown as AsyncIterable<any>;
 
       for await (const chunk of stream) {
         yield this.mapChunk(chunk);
@@ -108,7 +100,7 @@ export class OpenAIAdapter implements ProviderAdapter {
     config: ProviderConfig
   ): Promise<ChatCompletionResponse> {
     const client = this.getClient(config);
-    
+
     try {
       const response = await client.chat.completions.create({
         ...request,
@@ -137,18 +129,19 @@ export class OpenAIAdapter implements ProviderAdapter {
     // If message has attachments, convert to content array format
     if (msg.attachments && msg.attachments.length > 0) {
       const content: any[] = [];
-      
+
       // Add text content if present
       if (typeof msg.content === "string" && msg.content.trim()) {
         content.push({ type: "text", text: msg.content });
       } else if (Array.isArray(msg.content)) {
         content.push(...msg.content);
       }
-      
+
       // Add attachments as image_url
       for (const att of msg.attachments) {
         if (att.type === "image") {
-          const url = att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
+          const url =
+            att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
           if (url) {
             content.push({
               type: "image_url",
@@ -160,7 +153,7 @@ export class OpenAIAdapter implements ProviderAdapter {
           }
         }
       }
-      
+
       return {
         role: msg.role,
         content,
@@ -169,7 +162,7 @@ export class OpenAIAdapter implements ProviderAdapter {
         tool_call_id: msg.tool_call_id,
       };
     }
-    
+
     // Otherwise, return as-is (already in OpenAI format)
     return {
       role: msg.role,
@@ -199,12 +192,14 @@ export class OpenAIAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: chunk.usage ? {
-        prompt_tokens: chunk.usage.prompt_tokens || 0,
-        completion_tokens: chunk.usage.completion_tokens || 0,
-        total_tokens: chunk.usage.total_tokens || 0,
-        reasoning_tokens: chunk.usage.reasoning_tokens,
-      } : undefined,
+      usage: chunk.usage
+        ? {
+            prompt_tokens: chunk.usage.prompt_tokens || 0,
+            completion_tokens: chunk.usage.completion_tokens || 0,
+            total_tokens: chunk.usage.total_tokens || 0,
+            reasoning_tokens: chunk.usage.reasoning_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -227,12 +222,14 @@ export class OpenAIAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: response.usage ? {
-        prompt_tokens: response.usage.prompt_tokens || 0,
-        completion_tokens: response.usage.completion_tokens || 0,
-        total_tokens: response.usage.total_tokens || 0,
-        reasoning_tokens: response.usage.reasoning_tokens,
-      } : undefined,
+      usage: response.usage
+        ? {
+            prompt_tokens: response.usage.prompt_tokens || 0,
+            completion_tokens: response.usage.completion_tokens || 0,
+            total_tokens: response.usage.total_tokens || 0,
+            reasoning_tokens: response.usage.reasoning_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -249,4 +246,3 @@ export class OpenAIAdapter implements ProviderAdapter {
     return error instanceof Error ? error : new Error(String(error));
   }
 }
-

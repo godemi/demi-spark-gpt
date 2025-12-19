@@ -4,7 +4,7 @@ import { APIException } from "../utils/exceptions";
 
 /**
  * Process input attachments and convert to provider-compatible format
- * 
+ *
  * Handles:
  * - Image attachments (base64 or URL)
  * - File attachments (future)
@@ -15,13 +15,13 @@ export async function processInputAttachments(
   capabilities: ModelCapabilities
 ): Promise<ChatMessage[]> {
   return Promise.all(
-    messages.map(async (msg) => {
+    messages.map(async msg => {
       if (!msg.attachments || msg.attachments.length === 0) {
         return msg;
       }
 
       // Validate model supports vision/attachments
-      if (!capabilities.vision && msg.attachments.some((a) => a.type === "image")) {
+      if (!capabilities.vision && msg.attachments.some(a => a.type === "image")) {
         throw new APIException(
           `Model does not support vision/attachments`,
           400,
@@ -61,9 +61,7 @@ export async function processInputAttachments(
 /**
  * Process a single attachment
  */
-async function processAttachment(
-  attachment: Attachment
-): Promise<any | null> {
+async function processAttachment(attachment: Attachment): Promise<any | null> {
   if (attachment.type === "image") {
     // Validate image attachment
     if (!attachment.url && !attachment.data) {
@@ -86,9 +84,7 @@ async function processAttachment(
     // Build image URL (data URI or external URL)
     const imageUrl =
       attachment.url ||
-      (attachment.data
-        ? `data:${attachment.mime_type};base64,${attachment.data}`
-        : null);
+      (attachment.data ? `data:${attachment.mime_type};base64,${attachment.data}` : null);
 
     if (!imageUrl) {
       return null;
@@ -121,13 +117,7 @@ async function processAttachment(
 export function validateAttachment(attachment: Attachment): void {
   // Validate MIME type
   if (attachment.type === "image") {
-    const allowedImageTypes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
+    const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (!allowedImageTypes.includes(attachment.mime_type.toLowerCase())) {
       throw new APIException(
         `Unsupported image MIME type: ${attachment.mime_type}`,
@@ -162,4 +152,3 @@ export function validateAttachment(attachment: Attachment): void {
     }
   }
 }
-

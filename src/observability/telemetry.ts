@@ -3,7 +3,7 @@ import { InvocationContext } from "@azure/functions";
 
 /**
  * HALO Telemetry - Application Insights integration
- * 
+ *
  * Tracks requests, metrics, and errors for observability
  */
 export class HALOTelemetry {
@@ -88,11 +88,7 @@ export class HALOTelemetry {
   /**
    * Track an error
    */
-  trackError(
-    error: Error,
-    requestId: string,
-    context?: InvocationContext
-  ): void {
+  trackError(error: Error, requestId: string, context?: InvocationContext): void {
     if (!this.initialized || !this.client) {
       console.error("Error:", error);
       return;
@@ -133,4 +129,3 @@ export class HALOTelemetry {
 
 // Singleton instance
 export const telemetry = new HALOTelemetry();
-

@@ -1,7 +1,7 @@
 // src/utils/readVersionFile.ts
 
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
 
 // Get the path relative to the current file's location
 const versionPath = path.join(__dirname, "..", "..", "version.txt");

@@ -10,7 +10,7 @@ import { telemetry } from "../observability/telemetry";
 
 /**
  * Handles POST /v1/images/generations requests
- * 
+ *
  * Image generation endpoint (DALL-E, etc.)
  */
 export const imageGenerateHandler = async (
@@ -45,13 +45,7 @@ export const imageGenerateHandler = async (
     try {
       requestJson = JSON.parse(body);
     } catch (parseError) {
-      throw new APIException(
-        "Invalid JSON received.",
-        400,
-        "INVALID_JSON",
-        undefined,
-        requestId
-      );
+      throw new APIException("Invalid JSON received.", 400, "INVALID_JSON", undefined, requestId);
     }
 
     // Validate required fields
@@ -196,4 +190,3 @@ export const imageGenerateHandler = async (
     };
   }
 };
-

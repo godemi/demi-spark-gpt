@@ -11,4 +11,3 @@ app.http("chatCompletions", {
   authLevel: "function",
   handler: chatCompletionsHandler,
 });
-

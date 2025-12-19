@@ -32,16 +32,14 @@ export function redactSecrets(obj: any, depth = 0, maxDepth = 10): any {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => redactSecrets(item, depth + 1, maxDepth));
+    return obj.map(item => redactSecrets(item, depth + 1, maxDepth));
   }
 
   const redacted: any = {};
 
   for (const [key, value] of Object.entries(obj)) {
     const lowerKey = key.toLowerCase();
-    const isSensitive = SENSITIVE_KEYS.some((sensitive) =>
-      lowerKey.includes(sensitive)
-    );
+    const isSensitive = SENSITIVE_KEYS.some(sensitive => lowerKey.includes(sensitive));
 
     if (isSensitive) {
       redacted[key] = "***REDACTED***";
@@ -128,4 +126,3 @@ export function logError(
     ...redactSecrets(additionalContext || {}),
   });
 }
-

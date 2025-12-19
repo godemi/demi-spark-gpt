@@ -6,20 +6,15 @@ import {
   SSEChunk,
   ChatMessage,
 } from "../models/chatCompletionTypes";
-import {
-  ProviderAdapter,
-  ProviderConfig,
-  ProviderRequest,
-  ModelCapabilities,
-} from "./types";
+import { ProviderAdapter, ProviderConfig, ProviderRequest, ModelCapabilities } from "./types";
 import { getModelCapabilities } from "./modelRegistry";
 
 /**
  * Azure AI Foundry Provider Adapter
- * 
+ *
  * Handles requests to Azure AI Foundry for both Azure OpenAI deployments
  * and OSS "Models as a Service" (Llama, Mistral, Phi-3, etc.)
- * 
+ *
  * Uses the same OpenAI-compatible API pattern as Azure OpenAI
  */
 export class AzureFoundryAdapter implements ProviderAdapter {
@@ -31,7 +26,7 @@ export class AzureFoundryAdapter implements ProviderAdapter {
    */
   private getClient(config: ProviderConfig): OpenAI {
     const key = `${config.endpoint}-${config.deployment || config.model}-${config.authType}`;
-    
+
     if (this.clients.has(key)) {
       return this.clients.get(key)!;
     }
@@ -47,13 +42,13 @@ export class AzureFoundryAdapter implements ProviderAdapter {
           "api-key": "", // Will be replaced by token
         },
       });
-      
+
       // Set up token refresh
       const getToken = async () => {
         const token = await credential.getToken("https://cognitiveservices.azure.com/.default");
         return token.token;
       };
-      
+
       (client as any)._getToken = getToken;
     } else {
       client = new OpenAI({
@@ -104,26 +99,25 @@ export class AzureFoundryAdapter implements ProviderAdapter {
     return request;
   }
 
-  async *executeStream(
-    request: ProviderRequest,
-    config: ProviderConfig
-  ): AsyncIterable<SSEChunk> {
+  async *executeStream(request: ProviderRequest, config: ProviderConfig): AsyncIterable<SSEChunk> {
     const client = this.getClient(config);
-    
+
     try {
       const options: any = {
         ...request,
         stream: true,
       };
-      
+
       if (config.authType === "aad" && (client as any)._getToken) {
         const token = await (client as any)._getToken();
         options.headers = {
           Authorization: `Bearer ${token}`,
         };
       }
-      
-      const stream = await client.chat.completions.create(options) as unknown as AsyncIterable<any>;
+
+      const stream = (await client.chat.completions.create(
+        options
+      )) as unknown as AsyncIterable<any>;
 
       for await (const chunk of stream) {
         yield this.mapChunk(chunk);
@@ -138,20 +132,20 @@ export class AzureFoundryAdapter implements ProviderAdapter {
     config: ProviderConfig
   ): Promise<ChatCompletionResponse> {
     const client = this.getClient(config);
-    
+
     try {
       const options: any = {
         ...request,
         stream: false,
       };
-      
+
       if (config.authType === "aad" && (client as any)._getToken) {
         const token = await (client as any)._getToken();
         options.headers = {
           Authorization: `Bearer ${token}`,
         };
       }
-      
+
       const response = await client.chat.completions.create(options);
 
       return this.mapResponse(response);
@@ -177,18 +171,19 @@ export class AzureFoundryAdapter implements ProviderAdapter {
     // If message has attachments, convert to content array format
     if (msg.attachments && msg.attachments.length > 0) {
       const content: any[] = [];
-      
+
       // Add text content if present
       if (typeof msg.content === "string" && msg.content.trim()) {
         content.push({ type: "text", text: msg.content });
       } else if (Array.isArray(msg.content)) {
         content.push(...msg.content);
       }
-      
+
       // Add attachments as image_url (if model supports vision)
       for (const att of msg.attachments) {
         if (att.type === "image") {
-          const url = att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
+          const url =
+            att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
           if (url) {
             content.push({
               type: "image_url",
@@ -200,7 +195,7 @@ export class AzureFoundryAdapter implements ProviderAdapter {
           }
         }
       }
-      
+
       return {
         role: msg.role,
         content,
@@ -209,7 +204,7 @@ export class AzureFoundryAdapter implements ProviderAdapter {
         tool_call_id: msg.tool_call_id,
       };
     }
-    
+
     // Otherwise, return as-is (already in OpenAI format)
     return {
       role: msg.role,
@@ -239,11 +234,13 @@ export class AzureFoundryAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: chunk.usage ? {
-        prompt_tokens: chunk.usage.prompt_tokens || 0,
-        completion_tokens: chunk.usage.completion_tokens || 0,
-        total_tokens: chunk.usage.total_tokens || 0,
-      } : undefined,
+      usage: chunk.usage
+        ? {
+            prompt_tokens: chunk.usage.prompt_tokens || 0,
+            completion_tokens: chunk.usage.completion_tokens || 0,
+            total_tokens: chunk.usage.total_tokens || 0,
+          }
+        : undefined,
     };
   }
 
@@ -266,11 +263,13 @@ export class AzureFoundryAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: response.usage ? {
-        prompt_tokens: response.usage.prompt_tokens || 0,
-        completion_tokens: response.usage.completion_tokens || 0,
-        total_tokens: response.usage.total_tokens || 0,
-      } : undefined,
+      usage: response.usage
+        ? {
+            prompt_tokens: response.usage.prompt_tokens || 0,
+            completion_tokens: response.usage.completion_tokens || 0,
+            total_tokens: response.usage.total_tokens || 0,
+          }
+        : undefined,
     };
   }
 
@@ -287,4 +286,3 @@ export class AzureFoundryAdapter implements ProviderAdapter {
     return error instanceof Error ? error : new Error(String(error));
   }
 }
-

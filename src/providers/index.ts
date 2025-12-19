@@ -1,6 +1,6 @@
 /**
  * Provider Adapters Export
- * 
+ *
  * Central export point for all provider adapters and utilities
  */
 
@@ -41,4 +41,3 @@ export function getProviderAdapter(provider: string): ProviderAdapter | null {
       return null;
   }
 }
-

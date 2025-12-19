@@ -5,7 +5,7 @@ import { APIException } from "../utils/exceptions";
 
 /**
  * Handles GET /v1/models requests
- * 
+ *
  * Returns list of available models with their capabilities
  */
 export const listModelsHandler = async (
@@ -22,7 +22,7 @@ export const listModelsHandler = async (
       models = Object.keys(MODEL_REGISTRY);
     }
 
-    const modelsList = models.map((model) => {
+    const modelsList = models.map(model => {
       const capabilities = MODEL_REGISTRY[model];
       return {
         id: model,
@@ -67,4 +67,3 @@ export const listModelsHandler = async (
     };
   }
 };
-

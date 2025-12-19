@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /**
  * HALO Layer - OpenAI-Compatible Chat Completion Types
- * 
+ *
  * This module defines the core request/response schemas for the HALO layer,
  * providing OpenAI-compatible API contracts with provider-specific extensions.
  */
@@ -13,8 +13,8 @@ import { z } from "zod";
 export const AttachmentSchema = z.object({
   type: z.enum(["image", "file"]),
   mime_type: z.string(),
-  data: z.string().optional(),        // base64 encoded data
-  url: z.string().url().optional(),   // URL reference
+  data: z.string().optional(), // base64 encoded data
+  url: z.string().url().optional(), // URL reference
   filename: z.string().optional(),
   alt: z.string().optional(),
   size_bytes: z.number().optional(),
@@ -57,10 +57,12 @@ export type ToolCall = z.infer<typeof ToolCallSchema>;
 export const ContentPartSchema = z.object({
   type: z.enum(["text", "image_url"]),
   text: z.string().optional(),
-  image_url: z.object({
-    url: z.string(),
-    detail: z.enum(["auto", "low", "high"]).optional(),
-  }).optional(),
+  image_url: z
+    .object({
+      url: z.string(),
+      detail: z.enum(["auto", "low", "high"]).optional(),
+    })
+    .optional(),
 });
 
 export type ContentPart = z.infer<typeof ContentPartSchema>;
@@ -70,10 +72,7 @@ export type ContentPart = z.infer<typeof ContentPartSchema>;
  */
 export const ChatMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant", "tool"]),
-  content: z.union([
-    z.string(),
-    z.array(ContentPartSchema),
-  ]),
+  content: z.union([z.string(), z.array(ContentPartSchema)]),
   name: z.string().optional(),
   tool_calls: z.array(ToolCallSchema).optional(),
   tool_call_id: z.string().optional(),
@@ -134,23 +133,23 @@ export const ChatCompletionRequestSchema = z.object({
   api_version: z.string(),
   model: z.string(),
   messages: z.array(ChatMessageSchema).min(1),
-  
+
   // Provider routing
   provider: z.enum(["azure-openai", "openai", "azure-ai-foundry"]).optional(),
   azure_deployment: z.string().optional(),
   azure_endpoint: z.string().url().optional(),
-  
+
   // Generation parameters
   stream: z.boolean().default(false),
   temperature: z.number().min(0).max(2).optional(),
   top_p: z.number().min(0).max(1).optional(),
   max_tokens: z.number().int().min(1).optional(),
   max_completion_tokens: z.number().int().min(1).optional(),
-  
+
   // Reasoning mode (o1/o3 models)
   reasoning_mode: z.enum(["standard", "deep", "thinking"]).optional(),
   max_reasoning_tokens: z.number().int().optional(),
-  
+
   // Advanced parameters
   response_format: ResponseFormatSchema.optional(),
   tools: z.array(ToolDefinitionSchema).optional(),
@@ -164,7 +163,7 @@ export const ChatCompletionRequestSchema = z.object({
   logprobs: z.boolean().optional(),
   top_logprobs: z.number().int().min(0).max(20).optional(),
   user: z.string().optional(),
-  
+
   // HALO-specific extensions
   mode: z.enum(["chat", "image_generate", "multi"]).default("chat"),
   image_params: ImageParamsSchema.optional(),
@@ -180,7 +179,9 @@ export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 export const ChatCompletionChoiceSchema = z.object({
   index: z.number(),
   message: ChatMessageSchema,
-  finish_reason: z.enum(["stop", "length", "tool_calls", "content_filter", "function_call"]).nullable(),
+  finish_reason: z
+    .enum(["stop", "length", "tool_calls", "content_filter", "function_call"])
+    .nullable(),
   logprobs: z.any().nullable().optional(),
 });
 
@@ -208,7 +209,7 @@ export const ChatCompletionResponseSchema = z.object({
   model: z.string(),
   choices: z.array(ChatCompletionChoiceSchema),
   usage: UsageSchema.optional(),
-  
+
   // HALO extensions
   request_id: z.string().optional(),
   provider: z.string().optional(),
@@ -226,23 +227,30 @@ export const SSEChunkSchema = z.object({
   object: z.literal("chat.completion.chunk"),
   created: z.number(),
   model: z.string(),
-  choices: z.array(z.object({
-    index: z.number(),
-    delta: z.object({
-      role: z.enum(["system", "user", "assistant", "tool"]).optional(),
-      content: z.string().nullable().optional(),
-      tool_calls: z.array(ToolCallSchema).optional(),
-    }),
-    finish_reason: z.enum(["stop", "length", "tool_calls", "content_filter"]).nullable().optional(),
-    logprobs: z.any().nullable().optional(),
-  })),
+  choices: z.array(
+    z.object({
+      index: z.number(),
+      delta: z.object({
+        role: z.enum(["system", "user", "assistant", "tool"]).optional(),
+        content: z.string().nullable().optional(),
+        tool_calls: z.array(ToolCallSchema).optional(),
+      }),
+      finish_reason: z
+        .enum(["stop", "length", "tool_calls", "content_filter"])
+        .nullable()
+        .optional(),
+      logprobs: z.any().nullable().optional(),
+    })
+  ),
   usage: UsageSchema.optional(),
-  
+
   // HALO extensions
-  halo_metadata: z.object({
-    chunks_count: z.number().optional(),
-    latency_ms: z.number().optional(),
-  }).optional(),
+  halo_metadata: z
+    .object({
+      chunks_count: z.number().optional(),
+      latency_ms: z.number().optional(),
+    })
+    .optional(),
 });
 
 export type SSEChunk = z.infer<typeof SSEChunkSchema>;
@@ -251,14 +259,15 @@ export type SSEChunk = z.infer<typeof SSEChunkSchema>;
  * Final aggregate chunk schema
  */
 export const FinalChunkSchema = SSEChunkSchema.extend({
-  choices: z.array(z.object({
-    index: z.number(),
-    delta: z.object({
-      content: z.string(),
-    }),
-    finish_reason: z.enum(["stop", "length", "tool_calls", "content_filter"]).nullable(),
-  })),
+  choices: z.array(
+    z.object({
+      index: z.number(),
+      delta: z.object({
+        content: z.string(),
+      }),
+      finish_reason: z.enum(["stop", "length", "tool_calls", "content_filter"]).nullable(),
+    })
+  ),
 });
 
 export type FinalChunk = z.infer<typeof FinalChunkSchema>;
-

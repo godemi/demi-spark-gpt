@@ -2,7 +2,7 @@ import { Attachment } from "../models/chatCompletionTypes";
 
 /**
  * Process output attachments (generated images, files)
- * 
+ *
  * Handles:
  * - Image generation responses (DALL-E, etc.)
  * - Converting provider responses to HALO attachment format
@@ -20,9 +20,7 @@ export interface ImageGenerationResponse {
 /**
  * Convert image generation response to HALO attachments
  */
-export function processImageGenerationResponse(
-  response: ImageGenerationResponse
-): Attachment[] {
+export function processImageGenerationResponse(response: ImageGenerationResponse): Attachment[] {
   return response.data.map((item, index) => {
     const attachment: Attachment = {
       type: "image",
@@ -86,4 +84,3 @@ export function createAttachmentFromUrl(
     filename: filename || url.split("/").pop() || `image-${Date.now()}.png`,
   };
 }
-

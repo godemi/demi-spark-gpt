@@ -1,8 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import {
-  SparkGPTInputParametersType,
-  SparkGPTProcessedParametersType,
-} from "../models/types";
+import { SparkGPTInputParametersType, SparkGPTProcessedParametersType } from "../models/types";
 import {
   getAzureChatGPTRequestJson,
   returnAzureChatGPTRequestStream,
@@ -19,10 +16,10 @@ import { validateAndConvertParams } from "../utils/validation";
 
 /**
  * Legacy handler for POST /completions
- * 
+ *
  * This maintains backward compatibility with the old SparkGPT API format.
  * It includes deprecation headers to guide clients to the new /v1/chat/completions endpoint.
- * 
+ *
  * @deprecated Use /v1/chat/completions instead
  */
 export const legacyCompletionsHandler = async (
@@ -100,8 +97,10 @@ export const legacyCompletionsHandler = async (
     }
 
     // Make Azure OpenAI API request
-    const { response, payload, headers, errorResponse } =
-      await getAzureChatGPTRequestJson(processedParams, chatMessages);
+    const { response, payload, headers, errorResponse } = await getAzureChatGPTRequestJson(
+      processedParams,
+      chatMessages
+    );
 
     // Return success response with deprecation headers
     const jsonResponse = getHttpResponseInitJson(
@@ -157,4 +156,3 @@ export const legacyCompletionsHandler = async (
     };
   }
 };
-

@@ -2,7 +2,7 @@ import { ModelCapabilities } from "./types";
 
 /**
  * Model Registry - Centralized capability detection for all supported models
- * 
+ *
  * This registry maps model names to their capabilities, enabling automatic
  * routing and validation of requests based on model features.
  */
@@ -63,7 +63,7 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_output_tokens: 4096,
     supports_streaming: true,
   },
-  
+
   // Reasoning models (o1/o3)
   "o1-preview": {
     chat: true,
@@ -98,7 +98,7 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_output_tokens: 100000,
     supports_streaming: false,
   },
-  
+
   // Image generation models
   "dall-e-2": {
     chat: false,
@@ -133,7 +133,7 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_output_tokens: 0,
     supports_streaming: false,
   },
-  
+
   // OSS Models (Azure AI Foundry)
   "llama-3-70b": {
     chat: true,
@@ -189,7 +189,7 @@ export function getModelCapabilities(model: string): ModelCapabilities | null {
   if (model in MODEL_REGISTRY) {
     return MODEL_REGISTRY[model];
   }
-  
+
   // Try case-insensitive match
   const lowerModel = model.toLowerCase();
   for (const [key, capabilities] of Object.entries(MODEL_REGISTRY)) {
@@ -197,31 +197,28 @@ export function getModelCapabilities(model: string): ModelCapabilities | null {
       return capabilities;
     }
   }
-  
+
   // Try prefix matching for deployment names (e.g., "gpt-4o-2024-08-06")
   for (const [key, capabilities] of Object.entries(MODEL_REGISTRY)) {
     if (model.toLowerCase().startsWith(key.toLowerCase())) {
       return capabilities;
     }
   }
-  
+
   return null;
 }
 
 /**
  * Check if a model supports a specific capability
  */
-export function hasCapability(
-  model: string,
-  capability: keyof ModelCapabilities
-): boolean {
+export function hasCapability(model: string, capability: keyof ModelCapabilities): boolean {
   const caps = getModelCapabilities(model);
   if (!caps) return false;
-  
+
   if (capability === "max_context_tokens" || capability === "max_output_tokens") {
     return caps[capability] > 0;
   }
-  
+
   return caps[capability] === true;
 }
 
@@ -233,4 +230,3 @@ export function getModelsForProvider(provider: string): string[] {
   // maintain a separate mapping or query the provider's model list
   return Object.keys(MODEL_REGISTRY);
 }
-

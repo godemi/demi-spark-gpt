@@ -78,30 +78,29 @@ export interface ProviderError {
  */
 export interface ProviderAdapter {
   name: string;
-  
+
   /**
    * Build a provider-specific request from a HALO request
    */
   buildRequest(params: ChatCompletionRequest, config: ProviderConfig): Promise<ProviderRequest>;
-  
+
   /**
    * Execute a streaming request
    */
   executeStream(request: ProviderRequest, config: ProviderConfig): AsyncIterable<SSEChunk>;
-  
+
   /**
    * Execute a non-streaming request
    */
   executeJson(request: ProviderRequest, config: ProviderConfig): Promise<ChatCompletionResponse>;
-  
+
   /**
    * Get model capabilities for a given model name
    */
   getCapabilities(model: string): ModelCapabilities | null;
-  
+
   /**
    * Validate that the request is compatible with this provider
    */
   validateRequest(request: ChatCompletionRequest): boolean;
 }
-

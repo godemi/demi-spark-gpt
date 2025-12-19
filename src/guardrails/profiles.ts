@@ -1,6 +1,6 @@
 /**
  * Guardrail Profiles
- * 
+ *
  * Optional system-level guardrails that can be applied when explicitly enabled.
  * These replace the old baked-in pre-prompts with a configurable system.
  */
@@ -30,14 +30,14 @@ Always prioritize safety, accuracy, and user privacy.`,
     max_output_length: 10000,
     blocked_topics: ["violence", "illegal-activities", "personal-data"],
   },
-  
+
   "creative-mode": {
     system_prefix: "",
     content_filter_level: "moderate",
     pii_redaction: false,
   },
-  
-  "academic": {
+
+  academic: {
     system_prefix: `You are an academic research assistant. You must:
 - Cite sources when making factual claims
 - Distinguish between facts and opinions
@@ -46,7 +46,7 @@ Always prioritize safety, accuracy, and user privacy.`,
     content_filter_level: "moderate",
     pii_redaction: true,
   },
-  
+
   "customer-support": {
     system_prefix: `You are a customer support assistant. You must:
 - Be polite, professional, and empathetic
@@ -68,10 +68,7 @@ export function getGuardrailProfile(name: string): GuardrailProfile | null {
 /**
  * Apply guardrail profile to messages (if enabled)
  */
-export function applyGuardrails(
-  messages: any[],
-  profileName: string | undefined
-): any[] {
+export function applyGuardrails(messages: any[], profileName: string | undefined): any[] {
   if (!profileName) {
     return messages;
   }
@@ -84,7 +81,7 @@ export function applyGuardrails(
   // Prepend system message with guardrail prefix
   // Only if there isn't already a system message at the start
   const hasSystemMessage = messages.length > 0 && messages[0].role === "system";
-  
+
   if (hasSystemMessage) {
     // Prepend to existing system message
     return [
@@ -105,4 +102,3 @@ export function applyGuardrails(
     ];
   }
 }
-

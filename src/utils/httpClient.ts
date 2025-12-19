@@ -3,7 +3,7 @@ import { Agent } from "https";
 
 /**
  * HTTP Client with Connection Keep-Alive
- * 
+ *
  * Singleton axios instance with connection pooling for better performance
  * in Azure Functions environment
  */
@@ -35,15 +35,16 @@ export function createHttpClient(config?: {
   timeout?: number;
   keepAlive?: boolean;
 }): AxiosInstance {
-  const agent = config?.keepAlive !== false
-    ? new Agent({
-        keepAlive: true,
-        keepAliveMsecs: 30000,
-        maxSockets: 50,
-        maxFreeSockets: 10,
-        timeout: config?.timeout || 120000,
-      })
-    : undefined;
+  const agent =
+    config?.keepAlive !== false
+      ? new Agent({
+          keepAlive: true,
+          keepAliveMsecs: 30000,
+          maxSockets: 50,
+          maxFreeSockets: 10,
+          timeout: config?.timeout || 120000,
+        })
+      : undefined;
 
   return axios.create({
     httpsAgent: agent,
@@ -53,4 +54,3 @@ export function createHttpClient(config?: {
     },
   });
 }
-

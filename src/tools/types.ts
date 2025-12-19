@@ -1,6 +1,6 @@
 /**
  * Tool/Function Calling Types
- * 
+ *
  * Types for OpenAI-compatible tool calling functionality
  */
 
@@ -11,4 +11,3 @@ export {
   type ToolDefinition,
   type ToolCall,
 } from "../models/chatCompletionTypes";
-

@@ -87,8 +87,10 @@ export const postCompletionsHandler = async (
     }
 
     // Make Azure OpenAI API request
-    const { response, payload, headers, errorResponse } =
-      await getAzureChatGPTRequestJson(processedParams, chatMessages);
+    const { response, payload, headers, errorResponse } = await getAzureChatGPTRequestJson(
+      processedParams,
+      chatMessages
+    );
 
     // Return success response
     return getHttpResponseInitJson(

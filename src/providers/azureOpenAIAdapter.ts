@@ -6,17 +6,12 @@ import {
   SSEChunk,
   ChatMessage,
 } from "../models/chatCompletionTypes";
-import {
-  ProviderAdapter,
-  ProviderConfig,
-  ProviderRequest,
-  ModelCapabilities,
-} from "./types";
+import { ProviderAdapter, ProviderConfig, ProviderRequest, ModelCapabilities } from "./types";
 import { getModelCapabilities } from "./modelRegistry";
 
 /**
  * Azure OpenAI Provider Adapter
- * 
+ *
  * Handles requests to Azure OpenAI deployments with support for:
  * - API key and Azure AD authentication
  * - Streaming and non-streaming responses
@@ -32,7 +27,7 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
    */
   private getClient(config: ProviderConfig): OpenAI {
     const key = `${config.endpoint}-${config.deployment}-${config.authType}`;
-    
+
     if (this.clients.has(key)) {
       return this.clients.get(key)!;
     }
@@ -50,13 +45,13 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
         // For AAD, we need to get token and set it in headers
         // This is a simplified approach - in production, you might want to use a custom fetch
       });
-      
+
       // Set up token refresh
       const getToken = async () => {
         const token = await credential.getToken("https://cognitiveservices.azure.com/.default");
         return token.token;
       };
-      
+
       // Store token getter for later use
       (client as any)._getToken = getToken;
     } else {
@@ -114,19 +109,16 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     return request;
   }
 
-  async *executeStream(
-    request: ProviderRequest,
-    config: ProviderConfig
-  ): AsyncIterable<SSEChunk> {
+  async *executeStream(request: ProviderRequest, config: ProviderConfig): AsyncIterable<SSEChunk> {
     const client = this.getClient(config);
-    
+
     try {
       // For AAD auth, we need to inject the token
       const options: any = {
         ...request,
         stream: true,
       };
-      
+
       // If using AAD, get token and add to headers
       if (config.authType === "aad" && (client as any)._getToken) {
         const token = await (client as any)._getToken();
@@ -134,8 +126,10 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
           Authorization: `Bearer ${token}`,
         };
       }
-      
-      const stream = await client.chat.completions.create(options) as unknown as AsyncIterable<any>;
+
+      const stream = (await client.chat.completions.create(
+        options
+      )) as unknown as AsyncIterable<any>;
 
       for await (const chunk of stream) {
         yield this.mapChunk(chunk);
@@ -150,14 +144,14 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     config: ProviderConfig
   ): Promise<ChatCompletionResponse> {
     const client = this.getClient(config);
-    
+
     try {
       // For AAD auth, we need to inject the token
       const options: any = {
         ...request,
         stream: false,
       };
-      
+
       // If using AAD, get token and add to headers
       if (config.authType === "aad" && (client as any)._getToken) {
         const token = await (client as any)._getToken();
@@ -165,7 +159,7 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
           Authorization: `Bearer ${token}`,
         };
       }
-      
+
       const response = await client.chat.completions.create(options);
 
       return this.mapResponse(response);
@@ -190,18 +184,19 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     // If message has attachments, convert to content array format
     if (msg.attachments && msg.attachments.length > 0) {
       const content: any[] = [];
-      
+
       // Add text content if present
       if (typeof msg.content === "string" && msg.content.trim()) {
         content.push({ type: "text", text: msg.content });
       } else if (Array.isArray(msg.content)) {
         content.push(...msg.content);
       }
-      
+
       // Add attachments as image_url
       for (const att of msg.attachments) {
         if (att.type === "image") {
-          const url = att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
+          const url =
+            att.url || (att.data ? `data:${att.mime_type};base64,${att.data}` : undefined);
           if (url) {
             content.push({
               type: "image_url",
@@ -213,7 +208,7 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
           }
         }
       }
-      
+
       return {
         role: msg.role,
         content,
@@ -222,7 +217,7 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
         tool_call_id: msg.tool_call_id,
       };
     }
-    
+
     // Otherwise, return as-is (already in OpenAI format)
     return {
       role: msg.role,
@@ -252,12 +247,14 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: chunk.usage ? {
-        prompt_tokens: chunk.usage.prompt_tokens || 0,
-        completion_tokens: chunk.usage.completion_tokens || 0,
-        total_tokens: chunk.usage.total_tokens || 0,
-        reasoning_tokens: chunk.usage.reasoning_tokens,
-      } : undefined,
+      usage: chunk.usage
+        ? {
+            prompt_tokens: chunk.usage.prompt_tokens || 0,
+            completion_tokens: chunk.usage.completion_tokens || 0,
+            total_tokens: chunk.usage.total_tokens || 0,
+            reasoning_tokens: chunk.usage.reasoning_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -280,12 +277,14 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
         finish_reason: choice.finish_reason || null,
         logprobs: choice.logprobs || null,
       })),
-      usage: response.usage ? {
-        prompt_tokens: response.usage.prompt_tokens || 0,
-        completion_tokens: response.usage.completion_tokens || 0,
-        total_tokens: response.usage.total_tokens || 0,
-        reasoning_tokens: response.usage.reasoning_tokens,
-      } : undefined,
+      usage: response.usage
+        ? {
+            prompt_tokens: response.usage.prompt_tokens || 0,
+            completion_tokens: response.usage.completion_tokens || 0,
+            total_tokens: response.usage.total_tokens || 0,
+            reasoning_tokens: response.usage.reasoning_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -302,4 +301,3 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     return error instanceof Error ? error : new Error(String(error));
   }
 }
-
