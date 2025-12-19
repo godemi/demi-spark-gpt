@@ -1,0 +1,51 @@
+{
+  "name": "demi-spark-gpt",
+  "version": "2.3.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "lint": "eslint .",
+    "prestart": "npm run clean && npm run build",
+    "start": "func start",
+    "start:watch": "func start -- --watch",
+    "dev": "npm run prestart && concurrently \"npm:build:watch\" \"func start\"",
+    "build:watch": "tsc --watch",
+    "predeploy": "npm run clean && npm run build",
+    "deploy": "func azure functionapp publish demisparkgpt",
+    "test": "echo \"No tests yet...\"",
+    "publish:azure": "bash ./publish_azure_function.sh",
+    "publish:azure:force": "yes | bash ./publish_azure_function.sh",
+    "format": "prettier --write \"src/**/*.{ts,json}\"",
+    "smart-changeset": "ts-node src/scripts/smart-changeset.ts"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@prisma/client": "^6.6.0",
+    "axios": "^1.8.2",
+    "axios-retry": "^4.5.0",
+    "changeset": "^0.2.6",
+    "dotenv": "^16.4.7",
+    "inquirer": "^12.5.2",
+    "prisma": "^6.6.0",
+    "stream": "^0.0.3",
+    "ts-node": "^10.9.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.28.1",
+    "@types/node": "^22.0.0",
+    "@types/semver": "^7.7.0",
+    "azure-functions-core-tools": "^4.5.0",
+    "concurrently": "^9.1.2",
+    "enquirer": "^2.4.1",
+    "execa": "^9.5.2",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.0",
+    "semver": "^7.7.1",
+    "typescript": "^5.8.2"
+  }
+}

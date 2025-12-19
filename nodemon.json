@@ -1,0 +1,6 @@
+{
+  "watch": ["."],
+  "ext": "js,json,ts",
+  "ignore": ["node_modules", ".git", "dist"],
+  "exec": "func start"
+}

@@ -1,0 +1,34 @@
+# Git
+.git*
+.gitignore
+
+# IDE
+.vscode
+
+# Local settings (secrets)
+local.settings.json
+
+# Dependencies - included in deployment since we're not using remote build
+# node_modules
+
+# Source files (only dist is needed)
+src/
+
+# Infrastructure (Bicep/ARM templates)
+infra/
+
+# Development tools
+nodemon.json
+publish_azure_function.sh
+
+# Documentation
+*.md
+
+# Other config files
+azure.yaml
+.funcignore
+prisma/
+yarn.lock
+
+# Tests
+test/

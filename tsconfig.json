@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2022", // Modern target, which Node 22 supports
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "strict": true, // Enforce strict type-checking (recommended)
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "exclude": ["node_modules", "dist"]
+}
