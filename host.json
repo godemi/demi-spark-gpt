@@ -1,6 +1,11 @@
 {
   "version": "2.0",
   "main": "dist/index.js",
+  "extensions": {
+    "http": {
+      "routePrefix": ""
+    }
+  },
   "logging": {
     "applicationInsights": {
       "samplingSettings": {
@@ -13,5 +18,9 @@
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
     "version": "[4.*, 5.0.0)"
   },
-  "functionTimeout": "00:10:00"
+  "functionTimeout": "00:10:00",
+  "concurrency": {
+    "dynamicConcurrencyEnabled": true,
+    "snapshotPersistenceEnabled": true
+  }
 }
