@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    setupFiles: ["./src/__tests__/setup.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -26,6 +27,12 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     include: ["src/__tests__/**/*.test.ts"],
+    pool: "threads",
+    poolOptions: {
+      threads: {
+        singleThread: false,
+      },
+    },
   },
 });
 
