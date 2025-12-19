@@ -1,6 +1,7 @@
 import { HttpResponseInit, InvocationContext } from "@azure/functions";
 import axios, { AxiosResponse } from "axios";
 import {
+  ChatMessage,
   OFFICIAL_AZURE_OPENAI_CHATGPT_PARAMETERS,
   SparkGPTProcessedParametersType,
 } from "../models/types";
@@ -16,7 +17,8 @@ import { addCorsHeaders, createJsonResponseContent } from "./httpJsonResponse";
  * @throws Error if required environment variables are missing
  */
 export const generatePayloadAndHeaders = async (
-  parameters: SparkGPTProcessedParametersType
+  parameters: SparkGPTProcessedParametersType,
+  messages: ChatMessage[]
 ): Promise<{ payload: Record<string, any>; headers: Record<string, any> }> => {
   // Define headers with required content type and API key
   const headers: Record<string, any> = {
@@ -24,34 +26,11 @@ export const generatePayloadAndHeaders = async (
     "api-key": getEnvVar("AZURE_OPENAI_API_KEY"),
   };
 
-  const messages: Array<Record<string, any>> = [];
-
-  // Include system pre-prompts if provided
-  if (parameters.pre_prompts?.length > 0) {
-    for (const prePrompt of parameters.pre_prompts) {
-      console.log(
-        `Adding ${prePrompt.role || "undefined-role"} pre-prompt of type ${
-          prePrompt.type
-        } with text ${prePrompt.text.substring(0, 50)}...`
-      );
-      messages.push({
-        role: prePrompt.role || "system",
-        content: prePrompt.text,
-      });
-    }
-  }
-
-  // Add the main user prompt
-  messages.push({
-    role: "user",
-    content: parameters.prompt || "",
-  });
-
   const payload: Record<string, any> = { messages };
 
   // Add optional parameters if present
   for (const p of OFFICIAL_AZURE_OPENAI_CHATGPT_PARAMETERS) {
-    if (p in parameters) {
+    if (p in parameters && parameters[p as keyof SparkGPTProcessedParametersType] !== undefined) {
       payload[p] = parameters[p as keyof SparkGPTProcessedParametersType];
     }
   }
@@ -70,10 +49,11 @@ export const generatePayloadAndHeaders = async (
 export const returnAzureChatGPTRequestStream = async (
   context: InvocationContext,
   parameters: SparkGPTProcessedParametersType,
-  startTime: number
+  startTime: number,
+  messages: ChatMessage[]
 ): Promise<HttpResponseInit> => {
   try {
-    const { payload, headers } = await generatePayloadAndHeaders(parameters);
+    const { payload, headers } = await generatePayloadAndHeaders(parameters, messages);
     const axiosResponse: AxiosResponse = await axios.post(
       getEnvVar("AZURE_OPENAI_ENDPOINT"),
       payload,
@@ -234,14 +214,15 @@ const redactSensitiveHeaderData = (headers: Record<string, any>): Record<string,
  * @throws Error for network or processing failures
  */
 export const getAzureChatGPTRequestJson = async (
-  parameters: SparkGPTProcessedParametersType
+  parameters: SparkGPTProcessedParametersType,
+  messages: ChatMessage[]
 ): Promise<{
   response: any | null;
   payload: Record<string, any>;
   headers: Record<string, any>;
   errorResponse: any | null;
 }> => {
-  const { payload, headers } = await generatePayloadAndHeaders(parameters);
+  const { payload, headers } = await generatePayloadAndHeaders(parameters, messages);
 
   try {
     // Make non-streaming POST request
@@ -259,6 +240,7 @@ export const getAzureChatGPTRequestJson = async (
     };
   } catch (error: any) {
     // Format error response
+    const headersRedacted = redactSensitiveHeaderData(headers);
     const errorResponse = {
       error_name: "INTERNAL_SERVER_ERROR",
       error_message: `Failed to make or process the request: ${error.message}`,
@@ -268,7 +250,7 @@ export const getAzureChatGPTRequestJson = async (
     return {
       response: null,
       payload: payload,
-      headers: headers,
+      headers: headersRedacted,
       errorResponse: errorResponse,
     };
   }

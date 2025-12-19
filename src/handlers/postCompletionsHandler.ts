@@ -10,6 +10,7 @@ import {
   createJsonResponseContent,
   getHttpResponseInitJson,
 } from "../utils/httpJsonResponse";
+import { buildChatMessages } from "../utils/chatMessageBuilder";
 import { generatePrePrompts } from "../utils/processPrePrompts";
 import { validateAndConvertParams } from "../utils/validation";
 
@@ -78,15 +79,16 @@ export const postCompletionsHandler = async (
     // Validate and process parameters.
     const inputParams: SparkGPTInputParametersType = validateAndConvertParams(requestJson);
     const processedParams: SparkGPTProcessedParametersType = generatePrePrompts(inputParams);
+    const chatMessages = buildChatMessages(processedParams);
 
     // Check streaming support.
     if (processedParams.stream === true) {
-      return returnAzureChatGPTRequestStream(context, processedParams, startTime);
+      return returnAzureChatGPTRequestStream(context, processedParams, startTime, chatMessages);
     }
 
     // Make Azure OpenAI API request
     const { response, payload, headers, errorResponse } =
-      await getAzureChatGPTRequestJson(processedParams);
+      await getAzureChatGPTRequestJson(processedParams, chatMessages);
 
     // Return success response
     return getHttpResponseInitJson(

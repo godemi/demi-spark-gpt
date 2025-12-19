@@ -34,6 +34,11 @@ function formatType(paramName: string, paramSchema: z.ZodTypeAny): ParameterMeta
     usage: PARAMETER_METADATA[paramName]?.usage ?? "",
   };
 
+  // Unwrap effects (e.g., coerced numbers)
+  if (paramSchema instanceof z.ZodEffects) {
+    paramSchema = paramSchema._def.schema;
+  }
+
   // Handle optional parameters
   if (paramSchema instanceof z.ZodOptional) {
     metadata.optional = true;

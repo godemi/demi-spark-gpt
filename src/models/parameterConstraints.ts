@@ -80,6 +80,18 @@ export const PARAMETER_CONSTRAINTS: Record<string, ParameterConstraint> = {
     type: "float",
     description: "Nucleus sampling probability threshold",
   },
+  history_window: {
+    min: 1,
+    max: 100,
+    type: "int",
+    description: "Maximum number of history messages to include",
+  },
+  max_history_tokens: {
+    min: 32,
+    max: 32768,
+    type: "int",
+    description: "Token budget for history inclusion when using token_budget strategy",
+  },
 } as const;
 
 /**

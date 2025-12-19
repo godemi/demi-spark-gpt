@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PARAMETER_CONSTRAINTS, ParameterName } from "./parameterConstraints";
 
 /**
  * Type Definitions for SparkGPT API
@@ -6,6 +7,29 @@ import { z } from "zod";
  * This file contains all type definitions and schemas used throughout the application.
  * It uses Zod for runtime type validation and TypeScript for static typing.
  */
+
+const constrainedNumber = (name: ParameterName) => {
+  const { min, max } = PARAMETER_CONSTRAINTS[name];
+  let schema = z.coerce.number().min(min, { message: `${name} must be >= ${min}` });
+  if (max !== null) {
+    schema = schema.max(max, { message: `${name} must be <= ${max}` });
+  }
+  return schema;
+};
+
+export const ChatRoleSchema = z.enum(["system", "user", "assistant"]);
+export type ChatRole = z.infer<typeof ChatRoleSchema>;
+
+export const ChatMessageSchema = z.object({
+  role: ChatRoleSchema,
+  content: z.string(),
+  created_at: z.string().optional(),
+  id: z.string().optional(),
+});
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+export const HistoryStrategySchema = z.enum(["last_n", "token_budget", "all"]);
+export type HistoryStrategy = z.infer<typeof HistoryStrategySchema>;
 
 /**
  * Variable Type Definitions
@@ -73,16 +97,16 @@ export const SparkGPTInputParametersSchema = z.object({
   // Optional streaming flag
   stream: z.boolean().optional(),
   // Required parameters
-  temperature: z.number(),
-  max_tokens: z.number(),
+  temperature: constrainedNumber("temperature"),
+  max_tokens: constrainedNumber("max_tokens"),
   fallback_result_language: z.enum(["en", "de", "fr", "es"]),
   // Optional parameters (added best_of property)
-  best_of: z.number().optional(),
-  frequency_penalty: z.number().optional(),
+  best_of: constrainedNumber("best_of").optional(),
+  frequency_penalty: constrainedNumber("frequency_penalty").optional(),
   logit_bias: z.record(z.number()).optional(),
-  min_tokens: z.number().optional(),
-  n: z.number().optional(),
-  presence_penalty: z.number().optional(),
+  min_tokens: constrainedNumber("min_tokens").optional(),
+  n: constrainedNumber("n").optional(),
+  presence_penalty: constrainedNumber("presence_penalty").optional(),
   stop: z.union([z.string(), z.array(z.string())]).optional(),
   suffix: z.string().optional(),
   // System pre-prompt configurations (required)
@@ -94,12 +118,18 @@ export const SparkGPTInputParametersSchema = z.object({
   system_pre_prompts_add_emoticons: z.boolean(),
   system_pre_prompts_format_as_markdown: z.boolean(),
   // Other required parameters
-  top_p: z.number(),
+  top_p: constrainedNumber("top_p"),
   // Optional user identifier
   user: z.string().optional(),
   // Optional lists
   variables: z.array(VariableTypeSchema).optional(),
   custom_pre_prompts: z.array(CustomPrePromptTypeSchema).optional(),
+  // Chat history controls
+  system_prompt: z.union([z.string(), z.array(z.string())]).optional(),
+  history: z.array(ChatMessageSchema).optional(),
+  history_window: constrainedNumber("history_window").optional(),
+  history_strategy: HistoryStrategySchema.optional(),
+  max_history_tokens: constrainedNumber("max_history_tokens").optional(),
   // New parameter for overwriting system pre-prompts
   overwrite_system_pre_prompts: z
     .array(
@@ -154,6 +184,11 @@ export const DEFAULT_SPARK_GPT_PARAMETERS: SparkGPTProcessedParametersType = {
   system_pre_prompts_format_as_markdown: false,
   top_p: 0.95,
   user: undefined as string | undefined,
+  system_prompt: undefined as string | string[] | undefined,
+  history: [],
+  history_window: 3,
+  history_strategy: "last_n",
+  max_history_tokens: undefined as number | undefined,
   variables: [],
   custom_pre_prompts: [],
   pre_prompts: [],

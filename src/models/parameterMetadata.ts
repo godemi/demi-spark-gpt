@@ -160,4 +160,25 @@ export const PARAMETER_METADATA: Record<string, ParameterMetadataEntry> = {
     usage:
       "Allows defining additional instructions that modify how the model interprets input prompts.",
   },
+  system_prompt: {
+    description: "Root system instruction(s) applied before any pre-prompts or history.",
+    usage: "Use to set global behavior/context. Accepts a string or array of strings; each becomes a system message.",
+  },
+  history: {
+    description: "Array of prior messages to include in context.",
+    usage:
+      "Provide ordered chat messages with roles system|user|assistant. Combined with history_window/history_strategy to limit size.",
+  },
+  history_window: {
+    description: "Number of trailing history messages to include when using last_n strategy.",
+    usage: "Defaults to a small number (e.g., 3). Helps bound prompt size without truncation logic.",
+  },
+  history_strategy: {
+    description: "Strategy for selecting history: include all, last N, or trim to a token budget.",
+    usage: "Valid values: last_n, token_budget, all. Use with history_window or max_history_tokens.",
+  },
+  max_history_tokens: {
+    description: "Token budget used when history_strategy is token_budget.",
+    usage: "Approximate token budget for history. Messages beyond the budget are dropped from oldest to newest.",
+  },
 };
