@@ -147,6 +147,9 @@ __azurite_db*__.json
 .pnp.*
 .azure
 
+# pnpm store
+.pnpm-store/
+
 infra/
 
 **/.DS_Store
