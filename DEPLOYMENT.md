@@ -103,7 +103,7 @@ This method deploys only your code to an existing Azure Function App.
    npm run deploy
    ```
    
-   Replace `<FUNCTION_APP_NAME>` with your actual Function App name (e.g., `demisparkgpt`).
+   Replace `<FUNCTION_APP_NAME>` with your actual Function App name (e.g., `demigpt`).
 
 3. **Verify deployment**:
    ```bash
@@ -143,7 +143,7 @@ The script will:
 - Set the subscription and resource group
 - Clean and rebuild the project
 - Prompt for confirmation before publishing
-- Deploy to the Function App named `demisparkgpt`
+- Deploy to the Function App named `demigpt`
 
 **Note:** Update the `SUBSCRIPTION_ID` and `RESOURCE_GROUP` variables in `publish_azure_function.sh` if needed.
 
@@ -164,7 +164,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_NAME: 'demisparkgpt'
+  AZURE_FUNCTIONAPP_NAME: 'demigpt'
   NODE_VERSION: '20.x'
 
 jobs:
@@ -206,7 +206,7 @@ Configure `local.settings.json` for local testing:
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "WEBSITE_NODE_DEFAULT_VERSION": "~22",
     "AZURE_OPENAI_API_KEY": "your-key",
-    "SPARKGPT_API_KEY": "your-key",
+    "DEMIGPT_API_KEY": "your-key",
     "AZURE_OPENAI_ENDPOINT": "your-endpoint",
     "DATABASE_URL": "your-database-url"
   }
@@ -229,7 +229,7 @@ After deployment, configure application settings in Azure:
      --resource-group <RESOURCE_GROUP> \
      --settings \
        AZURE_OPENAI_API_KEY="your-key" \
-       SPARKGPT_API_KEY="your-key" \
+       DEMIGPT_API_KEY="your-key" \
        DATABASE_URL="your-database-url"
    ```
 

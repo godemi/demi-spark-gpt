@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PARAMETER_CONSTRAINTS, ParameterName } from "./parameterConstraints";
 
 /**
- * Type Definitions for SparkGPT API
+ * Type Definitions for DemiGPT API
  *
  * This file contains all type definitions and schemas used throughout the application.
  * It uses Zod for runtime type validation and TypeScript for static typing.
@@ -89,9 +89,9 @@ export const PrePromptTypeSchema = z.object({
 export type PrePromptType = z.infer<typeof PrePromptTypeSchema>;
 
 /**
- * SparkGPTInputParametersType: Represents the input parameters for a SparkGPT request.
+ * DemiGPTInputParametersType: Represents the input parameters for a DemiGPT request.
  */
-export const SparkGPTInputParametersSchema = z.object({
+export const DemiGPTInputParametersSchema = z.object({
   // Main prompt(s)
   prompt: z.union([z.string(), z.array(z.string())]),
   // Optional streaming flag
@@ -148,20 +148,20 @@ export const SparkGPTInputParametersSchema = z.object({
     .optional(),
 });
 
-export type SparkGPTInputParametersType = z.infer<typeof SparkGPTInputParametersSchema>;
+export type DemiGPTInputParametersType = z.infer<typeof DemiGPTInputParametersSchema>;
 
 /**
- * SparkGPTProcessedParametersType: Extends the input parameters with pre-prompt arrays.
+ * DemiGPTProcessedParametersType: Extends the input parameters with pre-prompt arrays.
  */
-export const SparkGPTProcessedParametersSchema = SparkGPTInputParametersSchema.extend({
+export const DemiGPTProcessedParametersSchema = DemiGPTInputParametersSchema.extend({
   pre_prompts: z.array(PrePromptTypeSchema),
 });
-export type SparkGPTProcessedParametersType = z.infer<typeof SparkGPTProcessedParametersSchema>;
+export type DemiGPTProcessedParametersType = z.infer<typeof DemiGPTProcessedParametersSchema>;
 
 /**
- * DEFAULT_SPARK_GPT_PARAMETERS: Default values for SparkGPT parameters.
+ * DEFAULT_DEMI_GPT_PARAMETERS: Default values for DemiGPT parameters.
  */
-export const DEFAULT_SPARK_GPT_PARAMETERS: SparkGPTProcessedParametersType = {
+export const DEFAULT_DEMI_GPT_PARAMETERS: DemiGPTProcessedParametersType = {
   prompt: "",
   stream: false,
   temperature: 0.7,

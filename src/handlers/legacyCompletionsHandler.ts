@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { SparkGPTInputParametersType, SparkGPTProcessedParametersType } from "../models/types";
+import { DemiGPTInputParametersType, DemiGPTProcessedParametersType } from "../models/types";
 import {
   getAzureChatGPTRequestJson,
   returnAzureChatGPTRequestStream,
@@ -17,7 +17,7 @@ import { validateAndConvertParams } from "../utils/validation";
 /**
  * Legacy handler for POST /completions
  *
- * This maintains backward compatibility with the old SparkGPT API format.
+ * This maintains backward compatibility with the old DemiGPT API format.
  * It includes deprecation headers to guide clients to the new /v1/chat/completions endpoint.
  *
  * @deprecated Use /v1/chat/completions instead
@@ -74,8 +74,8 @@ export const legacyCompletionsHandler = async (
     }
 
     // Validate and process parameters.
-    const inputParams: SparkGPTInputParametersType = validateAndConvertParams(requestJson);
-    const processedParams: SparkGPTProcessedParametersType = generatePrePrompts(inputParams);
+    const inputParams: DemiGPTInputParametersType = validateAndConvertParams(requestJson);
+    const processedParams: DemiGPTProcessedParametersType = generatePrePrompts(inputParams);
     const chatMessages = buildChatMessages(processedParams);
 
     // Check streaming support.

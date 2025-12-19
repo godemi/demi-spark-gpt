@@ -83,14 +83,14 @@ echo "Building the project..."
 npm run build
 
 # Prompt before publishing the function
-read -p "Are you sure you want to publish and overwrite the function 'demisparkgpt' on Azure? [y/N] " publish_choice
+read -p "Are you sure you want to publish and overwrite the function 'demigpt' on Azure? [y/N] " publish_choice
 if [[ "$publish_choice" != "y" && "$publish_choice" != "Y" ]]; then
   echo "Publish process aborted by user."
   exit 0
 fi
 
 # Publish the functionapp to Azure
-echo "Publishing Azure Function 'demisparkgpt' to resource group '$RESOURCE_GROUP'..."
-func azure functionapp publish demisparkgpt
+echo "Publishing Azure Function 'demigpt' to resource group '$RESOURCE_GROUP'..."
+func azure functionapp publish demigpt
 
 echo "Deployment complete."

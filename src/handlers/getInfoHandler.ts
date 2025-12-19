@@ -2,7 +2,7 @@ import { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functio
 import { z } from "zod";
 import { PARAMETER_CONSTRAINTS } from "../models/parameterConstraints";
 import { PARAMETER_METADATA } from "../models/parameterMetadata";
-import { SparkGPTInputParametersSchema } from "../models/types";
+import { DemiGPTInputParametersSchema } from "../models/types";
 import { addCorsHeaders } from "../utils/httpJsonResponse";
 
 /**
@@ -112,7 +112,7 @@ export const getInfoHandler = async (
 ): Promise<HttpResponseInit> => {
   try {
     // Get all parameters from the Zod schema
-    const shape = SparkGPTInputParametersSchema.shape as Record<string, z.ZodTypeAny>;
+    const shape = DemiGPTInputParametersSchema.shape as Record<string, z.ZodTypeAny>;
 
     // Convert schema definitions into detailed metadata
     const parametersInfo: Record<string, ParameterMetadata> = {};

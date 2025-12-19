@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from "axios";
 import {
   ChatMessage,
   OFFICIAL_AZURE_OPENAI_CHATGPT_PARAMETERS,
-  SparkGPTProcessedParametersType,
+  DemiGPTProcessedParametersType,
 } from "../models/types";
 import { getEnvVar } from "./config";
 import { addCorsHeaders, createJsonResponseContent } from "./httpJsonResponse";
@@ -17,7 +17,7 @@ import { addCorsHeaders, createJsonResponseContent } from "./httpJsonResponse";
  * @throws Error if required environment variables are missing
  */
 export const generatePayloadAndHeaders = async (
-  parameters: SparkGPTProcessedParametersType,
+  parameters: DemiGPTProcessedParametersType,
   messages: ChatMessage[]
 ): Promise<{ payload: Record<string, any>; headers: Record<string, any> }> => {
   // Define headers with required content type and API key
@@ -30,8 +30,8 @@ export const generatePayloadAndHeaders = async (
 
   // Add optional parameters if present
   for (const p of OFFICIAL_AZURE_OPENAI_CHATGPT_PARAMETERS) {
-    if (p in parameters && parameters[p as keyof SparkGPTProcessedParametersType] !== undefined) {
-      payload[p] = parameters[p as keyof SparkGPTProcessedParametersType];
+    if (p in parameters && parameters[p as keyof DemiGPTProcessedParametersType] !== undefined) {
+      payload[p] = parameters[p as keyof DemiGPTProcessedParametersType];
     }
   }
 
@@ -48,7 +48,7 @@ export const generatePayloadAndHeaders = async (
  */
 export const returnAzureChatGPTRequestStream = async (
   context: InvocationContext,
-  parameters: SparkGPTProcessedParametersType,
+  parameters: DemiGPTProcessedParametersType,
   startTime: number,
   messages: ChatMessage[]
 ): Promise<HttpResponseInit> => {
@@ -214,7 +214,7 @@ const redactSensitiveHeaderData = (headers: Record<string, any>): Record<string,
  * @throws Error for network or processing failures
  */
 export const getAzureChatGPTRequestJson = async (
-  parameters: SparkGPTProcessedParametersType,
+  parameters: DemiGPTProcessedParametersType,
   messages: ChatMessage[]
 ): Promise<{
   response: any | null;

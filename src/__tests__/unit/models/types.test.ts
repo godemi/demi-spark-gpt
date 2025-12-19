@@ -6,10 +6,10 @@ import {
   VariableTypeSchema,
   CustomPrePromptTypeSchema,
   PrePromptTypeSchema,
-  SparkGPTInputParametersSchema,
-  SparkGPTProcessedParametersSchema,
+  DemiGPTInputParametersSchema,
+  DemiGPTProcessedParametersSchema,
   AzureChatGPTRequestParameterSchema,
-  DEFAULT_SPARK_GPT_PARAMETERS,
+  DEFAULT_DEMI_GPT_PARAMETERS,
   OFFICIAL_AZURE_OPENAI_CHATGPT_PARAMETERS,
 } from "../../../models/types";
 
@@ -163,7 +163,7 @@ describe("PrePromptTypeSchema", () => {
   });
 });
 
-describe("SparkGPTInputParametersSchema", () => {
+describe("DemiGPTInputParametersSchema", () => {
   it("should validate minimal valid parameters", () => {
     const params = {
       prompt: "Hello",
@@ -179,7 +179,7 @@ describe("SparkGPTInputParametersSchema", () => {
       system_pre_prompts_add_emoticons: false,
       system_pre_prompts_format_as_markdown: false,
     };
-    const result = SparkGPTInputParametersSchema.safeParse(params);
+    const result = DemiGPTInputParametersSchema.safeParse(params);
     expect(result.success).toBe(true);
   });
 
@@ -230,7 +230,7 @@ describe("SparkGPTInputParametersSchema", () => {
       history_window: 5,
       history_strategy: "last_n",
     };
-    const result = SparkGPTInputParametersSchema.safeParse(params);
+    const result = DemiGPTInputParametersSchema.safeParse(params);
     expect(result.success).toBe(true);
   });
 
@@ -249,7 +249,7 @@ describe("SparkGPTInputParametersSchema", () => {
       system_pre_prompts_add_emoticons: false,
       system_pre_prompts_format_as_markdown: false,
     };
-    const result = SparkGPTInputParametersSchema.safeParse(params);
+    const result = DemiGPTInputParametersSchema.safeParse(params);
     expect(result.success).toBe(true);
   });
 
@@ -268,7 +268,7 @@ describe("SparkGPTInputParametersSchema", () => {
       system_pre_prompts_add_emoticons: false,
       system_pre_prompts_format_as_markdown: false,
     };
-    const result = SparkGPTInputParametersSchema.safeParse(params);
+    const result = DemiGPTInputParametersSchema.safeParse(params);
     expect(result.success).toBe(false);
   });
 });
@@ -308,17 +308,17 @@ describe("AzureChatGPTRequestParameterSchema", () => {
   });
 });
 
-describe("DEFAULT_SPARK_GPT_PARAMETERS", () => {
+describe("DEFAULT_DEMI_GPT_PARAMETERS", () => {
   it("should have all required fields", () => {
-    expect(DEFAULT_SPARK_GPT_PARAMETERS).toHaveProperty("prompt");
-    expect(DEFAULT_SPARK_GPT_PARAMETERS).toHaveProperty("temperature");
-    expect(DEFAULT_SPARK_GPT_PARAMETERS).toHaveProperty("max_tokens");
-    expect(DEFAULT_SPARK_GPT_PARAMETERS).toHaveProperty("fallback_result_language");
-    expect(DEFAULT_SPARK_GPT_PARAMETERS).toHaveProperty("top_p");
+    expect(DEFAULT_DEMI_GPT_PARAMETERS).toHaveProperty("prompt");
+    expect(DEFAULT_DEMI_GPT_PARAMETERS).toHaveProperty("temperature");
+    expect(DEFAULT_DEMI_GPT_PARAMETERS).toHaveProperty("max_tokens");
+    expect(DEFAULT_DEMI_GPT_PARAMETERS).toHaveProperty("fallback_result_language");
+    expect(DEFAULT_DEMI_GPT_PARAMETERS).toHaveProperty("top_p");
   });
 
   it("should validate against schema", () => {
-    const result = SparkGPTProcessedParametersSchema.safeParse(DEFAULT_SPARK_GPT_PARAMETERS);
+    const result = DemiGPTProcessedParametersSchema.safeParse(DEFAULT_DEMI_GPT_PARAMETERS);
     expect(result.success).toBe(true);
   });
 });

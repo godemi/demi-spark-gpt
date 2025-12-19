@@ -1,15 +1,15 @@
 // src/utils/processPrePrompts.ts
 
 import {
-  SparkGPTInputParametersType,
-  SparkGPTProcessedParametersType,
+  DemiGPTInputParametersType,
+  DemiGPTProcessedParametersType,
   VALID_PRE_PROMPT_ROLES,
 } from "../models/types";
 
 // Helper: add system pre-prompt if global flag is true.
 const addSystemPrePromptsGlobal = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_global === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_global"
@@ -46,8 +46,8 @@ const addSystemPrePromptsGlobal = (
 
 // Helper: add system pre-prompt for ensuring minimum tokens.
 const addSystemPrePromptsGenerateMinTokens = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (
     typeof params.min_tokens === "number" &&
     params.system_pre_prompts_generate_min_tokens === true
@@ -63,8 +63,8 @@ const addSystemPrePromptsGenerateMinTokens = (
 
 // Helper: add system pre-prompt to explain technical terms.
 const addSystemPrePromptsExplainTechnicalTerms = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_explain_technical_terms === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_explain_technical_terms"
@@ -81,8 +81,8 @@ const addSystemPrePromptsExplainTechnicalTerms = (
 
 // Helper: add system pre-prompt for non-expert mode.
 const addSystemPrePromptsNonExpertMode = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_non_expert_mode === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_non_expert_mode"
@@ -101,8 +101,8 @@ const addSystemPrePromptsNonExpertMode = (
 
 // Helper: add system pre-prompt for brief responses.
 const addSystemPrePromptsBriefResponse = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_brief_response === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_brief_response"
@@ -119,8 +119,8 @@ const addSystemPrePromptsBriefResponse = (
 
 // Helper: add system pre-prompt regarding emoticons.
 const addSystemPrePromptsAddEmoticons = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_add_emoticons === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_add_emoticons"
@@ -145,8 +145,8 @@ const addSystemPrePromptsAddEmoticons = (
 
 // Helper: add system pre-prompt to format as markdown.
 const addSystemPrePromptsFormatAsMarkdown = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.system_pre_prompts_format_as_markdown === true) {
     const overwrite = params.overwrite_system_pre_prompts?.find(
       p => p.name === "system_pre_prompts_format_as_markdown"
@@ -165,8 +165,8 @@ const addSystemPrePromptsFormatAsMarkdown = (
 
 // Helper: add system pre-prompt for fallback language.
 export const addSystemPrePromptsFallbackLanguage = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.fallback_result_language) {
     params.pre_prompts.push({
       role: "system",
@@ -179,8 +179,8 @@ export const addSystemPrePromptsFallbackLanguage = (
 
 // Helper: add custom pre-prompts.
 const addCustomPrePrompts = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   if (params.custom_pre_prompts && params.custom_pre_prompts.length > 0) {
     for (const customPrePrompt of params.custom_pre_prompts) {
       const prePromptRole = `${customPrePrompt.role}_pre_prompts`;
@@ -203,8 +203,8 @@ const addCustomPrePrompts = (
 
 // Helper: add system pre-prompts for variables.
 const addSystemPrePromptsVariables = (
-  params: SparkGPTProcessedParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTProcessedParametersType
+): DemiGPTProcessedParametersType => {
   console.log("variables", params.variables);
 
   if (Array.isArray(params.variables) && params.variables.length > 0) {
@@ -231,14 +231,14 @@ const addSystemPrePromptsVariables = (
  * It ensures the processed parameters object includes empty arrays for system, assistant,
  * and user pre-prompts, then adds the various pre-prompts.
  *
- * @param params - The current SparkGPTInputParametersType configuration.
- * @returns The extended SparkGPTProcessedParametersType with added pre-prompts.
+ * @param params - The current DemiGPTInputParametersType configuration.
+ * @returns The extended DemiGPTProcessedParametersType with added pre-prompts.
  */
 export const generatePrePrompts = (
-  params: SparkGPTInputParametersType
-): SparkGPTProcessedParametersType => {
+  params: DemiGPTInputParametersType
+): DemiGPTProcessedParametersType => {
   // Initialize pre-prompt arrays in the processed parameters.
-  const processedParams: SparkGPTProcessedParametersType = {
+  const processedParams: DemiGPTProcessedParametersType = {
     ...params,
     pre_prompts: [],
   };
