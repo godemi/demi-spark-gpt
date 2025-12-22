@@ -165,7 +165,8 @@ export const chatCompletionsHandler = async (
         provider,
         resolvedRequest.azure_endpoint,
         resolvedModel.deployment || resolvedRequest.azure_deployment,
-        resolvedRequest.api_version
+        resolvedRequest.api_version,
+        effectiveModel
       );
     } catch (configError) {
       const errorMessage = configError instanceof Error ? configError.message : String(configError);

@@ -2,18 +2,25 @@ import { getEnvVar } from "../utils/config";
 import { ProviderConfig } from "../providers/types";
 
 /**
+ * Azure OpenAI endpoint configuration
+ */
+export interface AzureOpenAIConfig {
+  endpoint: string;
+  deployment?: string;
+  api_key?: string;
+  api_version: string;
+  auth_type: "api-key" | "aad";
+}
+
+/**
  * Provider Environment Configuration
  *
  * Loads and validates provider configurations from environment variables
  */
 export interface ProviderEnvConfig {
-  azure_openai: {
-    endpoint: string;
-    deployment: string;
-    api_key?: string;
-    api_version: string;
-    auth_type: "api-key" | "aad";
-  };
+  azure_openai: AzureOpenAIConfig;
+  azure_openai_endpoints: Map<string, AzureOpenAIConfig>; // Map of endpoint URL -> config
+  azure_openai_models: Map<string, AzureOpenAIConfig>; // Map of model name -> config
   openai?: {
     api_key: string;
     organization?: string;
@@ -53,6 +60,98 @@ function normalizeAzureEndpoint(url: string): string {
 }
 
 /**
+ * Load model-specific Azure OpenAI configuration from environment variables
+ * Supports pattern: AZURE_OPENAI_ENDPOINT_<MODEL>, AZURE_OPENAI_API_KEY_<MODEL>, etc.
+ */
+function loadModelSpecificConfig(model: string): AzureOpenAIConfig | null {
+  const modelUpper = model.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const endpointKey = `AZURE_OPENAI_ENDPOINT_${modelUpper}`;
+  const apiKeyKey = `AZURE_OPENAI_API_KEY_${modelUpper}`;
+  const apiVersionKey = `AZURE_OPENAI_API_VERSION_${modelUpper}`;
+  const authTypeKey = `AZURE_OPENAI_AUTH_TYPE_${modelUpper}`;
+
+  const endpoint = process.env[endpointKey];
+  if (!endpoint) {
+    return null;
+  }
+
+  return {
+    endpoint: normalizeAzureEndpoint(endpoint),
+    api_key: process.env[apiKeyKey],
+    api_version: process.env[apiVersionKey] || "2024-12-01-preview",
+    auth_type: (process.env[authTypeKey] || "api-key") as "api-key" | "aad",
+  };
+}
+
+/**
+ * Load all model-specific configurations from environment
+ */
+function loadAllModelConfigs(): Map<string, AzureOpenAIConfig> {
+  const modelConfigs = new Map<string, AzureOpenAIConfig>();
+
+  // Scan environment for AZURE_OPENAI_ENDPOINT_* patterns
+  for (const [key, value] of Object.entries(process.env)) {
+    if (key.startsWith("AZURE_OPENAI_ENDPOINT_") && value) {
+      // Extract model name from key (e.g., AZURE_OPENAI_ENDPOINT_GPT_4O -> gpt-4o)
+      const modelKey = key.replace("AZURE_OPENAI_ENDPOINT_", "");
+      const modelName = modelKey.toLowerCase().replace(/_/g, "-");
+
+      const apiKeyKey = `AZURE_OPENAI_API_KEY_${modelKey}`;
+      const apiVersionKey = `AZURE_OPENAI_API_VERSION_${modelKey}`;
+      const authTypeKey = `AZURE_OPENAI_AUTH_TYPE_${modelKey}`;
+
+      modelConfigs.set(modelName, {
+        endpoint: normalizeAzureEndpoint(value),
+        api_key: process.env[apiKeyKey],
+        api_version: process.env[apiVersionKey] || "2024-12-01-preview",
+        auth_type: (process.env[authTypeKey] || "api-key") as "api-key" | "aad",
+      });
+    }
+  }
+
+  return modelConfigs;
+}
+
+/**
+ * Build endpoint lookup map from environment variables
+ * Supports pattern: AZURE_OPENAI_ENDPOINT_<ENDPOINT_HASH>, AZURE_OPENAI_API_KEY_<ENDPOINT_HASH>
+ * where ENDPOINT_HASH is a normalized identifier for the endpoint
+ */
+function loadEndpointConfigs(): Map<string, AzureOpenAIConfig> {
+  const endpointConfigs = new Map<string, AzureOpenAIConfig>();
+
+  // Look for endpoint-specific configs (using endpoint hash/identifier)
+  // Pattern: AZURE_OPENAI_ENDPOINT_<ID> and AZURE_OPENAI_API_KEY_<ID>
+  const endpointIds = new Set<string>();
+  for (const key of Object.keys(process.env)) {
+    const match = key.match(/^AZURE_OPENAI_ENDPOINT_([A-Z0-9_]+)$/);
+    if (match && !key.includes("_API_KEY_") && !key.includes("_API_VERSION_") && !key.includes("_AUTH_TYPE_")) {
+      endpointIds.add(match[1]);
+    }
+  }
+
+  for (const endpointId of endpointIds) {
+    const endpointKey = `AZURE_OPENAI_ENDPOINT_${endpointId}`;
+    const apiKeyKey = `AZURE_OPENAI_API_KEY_${endpointId}`;
+    const apiVersionKey = `AZURE_OPENAI_API_VERSION_${endpointId}`;
+    const authTypeKey = `AZURE_OPENAI_AUTH_TYPE_${endpointId}`;
+
+    const endpoint = process.env[endpointKey];
+    if (endpoint) {
+      const normalized = normalizeAzureEndpoint(endpoint);
+      endpointConfigs.set(normalized, {
+        endpoint: normalized,
+        api_key: process.env[apiKeyKey],
+        api_version: process.env[apiVersionKey] || "2024-12-01-preview",
+        auth_type: (process.env[authTypeKey] || "api-key") as "api-key" | "aad",
+      });
+    }
+  }
+
+  return endpointConfigs;
+}
+
+/**
  * Load provider configuration from environment variables
  */
 export function loadProviderConfig(): ProviderEnvConfig {
@@ -78,6 +177,8 @@ export function loadProviderConfig(): ProviderEnvConfig {
       api_version: process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview",
       auth_type: (process.env.AZURE_OPENAI_AUTH_TYPE || "api-key") as "api-key" | "aad",
     },
+    azure_openai_endpoints: loadEndpointConfigs(),
+    azure_openai_models: loadAllModelConfigs(),
   };
 
   // Optional OpenAI config
@@ -109,20 +210,48 @@ export function buildProviderConfig(
   provider: string,
   requestEndpoint?: string,
   requestDeployment?: string,
-  requestApiVersion?: string
+  requestApiVersion?: string,
+  modelName?: string
 ): ProviderConfig {
   const envConfig = loadProviderConfig();
 
   switch (provider) {
     case "azure-openai": {
       const azureConfig = envConfig.azure_openai;
+      let endpoint = requestEndpoint || azureConfig.endpoint;
+      let apiKey = azureConfig.api_key;
+      let apiVersion = requestApiVersion || azureConfig.api_version;
+      let authType = azureConfig.auth_type;
+
+      // Normalize endpoint for lookup
+      const normalizedEndpoint = normalizeAzureEndpoint(endpoint);
+
+      // Priority 1: Check if there's a model-specific configuration
+      if (modelName) {
+        const modelConfig = envConfig.azure_openai_models.get(modelName.toLowerCase());
+        if (modelConfig) {
+          endpoint = modelConfig.endpoint;
+          apiKey = modelConfig.api_key || apiKey;
+          apiVersion = modelConfig.api_version;
+          authType = modelConfig.auth_type;
+        }
+      }
+
+      // Priority 2: Check if there's an endpoint-specific configuration
+      const endpointConfig = envConfig.azure_openai_endpoints.get(normalizedEndpoint);
+      if (endpointConfig) {
+        apiKey = endpointConfig.api_key || apiKey;
+        apiVersion = endpointConfig.api_version;
+        authType = endpointConfig.auth_type;
+      }
+
       return {
         provider: "azure-openai",
-        endpoint: requestEndpoint || azureConfig.endpoint,
+        endpoint: endpoint,
         deployment: requestDeployment || azureConfig.deployment,
-        apiKey: azureConfig.api_key,
-        apiVersion: requestApiVersion || azureConfig.api_version,
-        authType: azureConfig.auth_type,
+        apiKey: apiKey,
+        apiVersion: apiVersion,
+        authType: authType,
       };
     }
 

@@ -67,8 +67,8 @@ export const imageGenerateHandler = async (
     const quality = requestJson.quality || "standard";
     const response_format = requestJson.response_format || "url";
 
-    // Build provider config
-    const providerConfig = buildProviderConfig(provider);
+    // Build provider config (pass model name for model-specific endpoint lookup)
+    const providerConfig = buildProviderConfig(provider, undefined, undefined, undefined, model);
 
     // Log request
     logRequest(context, {
