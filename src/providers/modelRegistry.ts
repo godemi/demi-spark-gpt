@@ -110,6 +110,9 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_context_tokens: 128000,
     max_output_tokens: 16384,
     supports_streaming: true,
+    supports_custom_temperature: true,
+    supports_max_tokens: false,
+    supports_max_completion_tokens: true,
   },
   "gpt-5-nano": {
     chat: true,
@@ -121,6 +124,9 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_context_tokens: 128000,
     max_output_tokens: 16384,
     supports_streaming: true,
+    supports_custom_temperature: false, // gpt-5-nano doesn't support custom temperature
+    supports_max_tokens: false,
+    supports_max_completion_tokens: true,
   },
   "gpt-5": {
     chat: true,
@@ -132,6 +138,9 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_context_tokens: 128000,
     max_output_tokens: 16384,
     supports_streaming: true,
+    supports_custom_temperature: true,
+    supports_max_tokens: false,
+    supports_max_completion_tokens: true,
   },
   "gpt-5-mini": {
     chat: true,
@@ -143,6 +152,9 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     max_context_tokens: 64000,
     max_output_tokens: 8192,
     supports_streaming: true,
+    supports_custom_temperature: true,
+    supports_max_tokens: false,
+    supports_max_completion_tokens: true,
   },
 
   // Image generation models

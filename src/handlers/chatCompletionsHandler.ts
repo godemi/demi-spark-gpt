@@ -220,7 +220,32 @@ export const chatCompletionsHandler = async (
     });
 
     // Build provider request with resolved settings
-    const providerRequest = await adapter.buildRequest(resolvedRequest, providerConfig);
+    let providerRequest;
+    try {
+      providerRequest = await adapter.buildRequest(resolvedRequest, providerConfig);
+    } catch (buildError) {
+      const errorMessage = buildError instanceof Error ? buildError.message : String(buildError);
+      
+      // Check if it's a parameter validation error
+      if (errorMessage.includes("does not support")) {
+        throw new APIException(
+          errorMessage,
+          400,
+          "UNSUPPORTED_PARAMETER",
+          undefined,
+          requestId
+        );
+      }
+      
+      // Re-throw other errors
+      throw new APIException(
+        `Failed to build provider request: ${errorMessage}`,
+        500,
+        "PROVIDER_REQUEST_BUILD_ERROR",
+        undefined,
+        requestId
+      );
+    }
 
     // Execute request
     if (resolvedRequest.stream) {

@@ -31,6 +31,10 @@ export interface ModelCapabilities {
   max_context_tokens: number;
   max_output_tokens: number;
   supports_streaming: boolean;
+  // Parameter support flags
+  supports_custom_temperature?: boolean; // Default true, false for gpt-5-nano
+  supports_max_tokens?: boolean; // Default true, false for GPT-5 models that use max_completion_tokens
+  supports_max_completion_tokens?: boolean; // Default true
 }
 
 /**

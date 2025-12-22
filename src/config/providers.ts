@@ -268,52 +268,64 @@ export function buildProviderConfig(
     case "azure-openai": {
       const azureConfig = envConfig.azure_openai;
       
-      // Model name is required - fail fast if not provided
-      if (!modelName) {
+      // Initialize with default values
+      let endpoint = requestEndpoint || process.env.AZURE_OPENAI_ENDPOINT;
+      let apiKey = process.env.AZURE_OPENAI_API_KEY;
+      let apiVersion = requestApiVersion || azureConfig.api_version;
+      let authType = azureConfig.auth_type;
+      let deployment = requestDeployment || azureConfig.deployment;
+
+      // Priority 1: Model-specific configuration (if modelName provided)
+      if (modelName) {
+        const modelConfig = envConfig.azure_openai_models.get(modelName.toLowerCase());
+        if (modelConfig) {
+          // Use model-specific configuration (model-specific config has priority over requestEndpoint)
+          endpoint = modelConfig.endpoint; // Model-specific endpoint takes priority
+          apiKey = modelConfig.api_key;
+          apiVersion = requestApiVersion || modelConfig.api_version;
+          authType = modelConfig.auth_type;
+          deployment = requestDeployment || modelName;
+        } else {
+          // Model name provided but no model-specific config found
+          // Fall back to default config but warn in logs
+          console.warn(
+            `No model-specific configuration found for: ${modelName}. ` +
+            `Falling back to default Azure OpenAI configuration. ` +
+            `For better control, set environment variables:\n` +
+            `  - AZURE_OPENAI_ENDPOINT_${modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}\n` +
+            `  - AZURE_OPENAI_API_KEY_${modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`
+          );
+          // Use modelName as deployment if not explicitly provided
+          if (!requestDeployment && modelName) {
+            deployment = modelName;
+          }
+        }
+      }
+
+      // Validate required fields
+      if (!endpoint) {
         throw new Error(
-          "Model name is required for Azure OpenAI provider. " +
-          "Please specify a model in your request or use a task_profile that resolves to a model."
+          "Azure OpenAI endpoint is required. " +
+          "Please set AZURE_OPENAI_ENDPOINT environment variable or provide endpoint in request."
         );
       }
 
-      // Check if there's a model-specific configuration - REQUIRED
-      const modelConfig = envConfig.azure_openai_models.get(modelName.toLowerCase());
-      if (!modelConfig) {
-        const modelEnvKey = modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_");
-        throw new Error(
-          `No configuration found for model: ${modelName}. ` +
-          `Please set the following environment variables:\n` +
-          `  - AZURE_OPENAI_ENDPOINT_${modelEnvKey}\n` +
-          `  - AZURE_OPENAI_API_KEY_${modelEnvKey}\n` +
-          `  - AZURE_OPENAI_API_VERSION_${modelEnvKey} (optional, defaults to ${azureConfig.api_version})\n` +
-          `  - AZURE_OPENAI_AUTH_TYPE_${modelEnvKey} (optional, defaults to ${azureConfig.auth_type})`
-        );
-      }
-
-      // Use model-specific configuration
-      let endpoint = requestEndpoint || modelConfig.endpoint;
-      let apiKey = modelConfig.api_key;
-      let apiVersion = requestApiVersion || modelConfig.api_version;
-      let authType = modelConfig.auth_type;
-      let deployment = requestDeployment || modelName;
-
-      // Validate that API key is present
       if (!apiKey) {
-        const modelEnvKey = modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_");
         throw new Error(
-          `API key is missing for model: ${modelName}. ` +
-          `Please set AZURE_OPENAI_API_KEY_${modelEnvKey} environment variable.`
+          "Azure OpenAI API key is required. " +
+          "Please set AZURE_OPENAI_API_KEY environment variable or model-specific API key."
         );
       }
 
       // Normalize endpoint for lookup
       const normalizedEndpoint = normalizeAzureEndpoint(endpoint);
 
-      // Priority 2: Check if there's an endpoint-specific configuration (for API key override)
+      // Priority 2: Endpoint-specific configuration (for API key override)
       const endpointConfig = envConfig.azure_openai_endpoints.get(normalizedEndpoint);
-      if (endpointConfig && endpointConfig.api_key) {
-        apiKey = endpointConfig.api_key;
-        // Use endpoint-specific API version if provided
+      if (endpointConfig) {
+        if (endpointConfig.api_key) {
+          apiKey = endpointConfig.api_key;
+        }
         if (endpointConfig.api_version) {
           apiVersion = endpointConfig.api_version;
         }

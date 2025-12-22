@@ -84,12 +84,47 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     return client;
   }
 
+  /**
+   * Validate parameters based on model capabilities
+   */
+  private validateParametersForModel(
+    params: ChatCompletionRequest,
+    model: string
+  ): void {
+    const capabilities = getModelCapabilities(model);
+    
+    // If capabilities not found, skip validation (unknown model will fail later)
+    if (!capabilities) {
+      return;
+    }
+
+    // Validate temperature support
+    if (params.temperature !== undefined && capabilities.supports_custom_temperature === false) {
+      throw new Error(
+        `Model '${model}' does not support custom temperature values. ` +
+        `Please remove the 'temperature' parameter or use a different model.`
+      );
+    }
+
+    // Validate max_tokens vs max_completion_tokens
+    if (params.max_tokens !== undefined && capabilities.supports_max_tokens === false) {
+      throw new Error(
+        `Model '${model}' does not support 'max_tokens' parameter. ` +
+        `Please use 'max_completion_tokens' instead.`
+      );
+    }
+  }
+
   async buildRequest(
     params: ChatCompletionRequest,
     config: ProviderConfig
   ): Promise<ProviderRequest> {
     // Model is resolved from: config.deployment > config.model > params.model > default
     const model = config.deployment || config.model || params.model || "gpt-5-nano";
+    
+    // Validate parameters for this model
+    this.validateParametersForModel(params, model);
+
     const request: ProviderRequest = {
       model,
       messages: params.messages.map(this.normalizeMessage),
@@ -99,10 +134,21 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     // Add optional parameters
     if (params.temperature !== undefined) request.temperature = params.temperature;
     if (params.top_p !== undefined) request.top_p = params.top_p;
-    if (params.max_tokens !== undefined) request.max_tokens = params.max_tokens;
+    
+    // Handle max_tokens conversion for models that only support max_completion_tokens
+    const capabilities = getModelCapabilities(model);
+    if (params.max_tokens !== undefined) {
+      if (capabilities && capabilities.supports_max_tokens === false && capabilities.supports_max_completion_tokens !== false) {
+        // Auto-convert max_tokens to max_completion_tokens for better UX
+        request.max_completion_tokens = params.max_tokens;
+      } else {
+        request.max_tokens = params.max_tokens;
+      }
+    }
     if (params.max_completion_tokens !== undefined) {
       request.max_completion_tokens = params.max_completion_tokens;
     }
+    
     if (params.reasoning_mode) request.reasoning_mode = params.reasoning_mode;
     if (params.max_reasoning_tokens !== undefined) {
       request.max_reasoning_tokens = params.max_reasoning_tokens;

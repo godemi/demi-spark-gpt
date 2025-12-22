@@ -17,9 +17,9 @@ describe("Environment Variable Validation", () => {
   });
 
   describe("validateAzureOpenAIEnv", () => {
-    it("should return valid when all required variables are set", () => {
-      process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
-      process.env.AZURE_OPENAI_API_KEY = "test-key";
+    it("should return valid when model-specific configurations exist", () => {
+      process.env.AZURE_OPENAI_ENDPOINT_GPT_5_NANO = "https://test.openai.azure.com";
+      process.env.AZURE_OPENAI_API_KEY_GPT_5_NANO = "test-key";
 
       const result = validateAzureOpenAIEnv();
 
@@ -27,36 +27,49 @@ describe("Environment Variable Validation", () => {
       expect(result.missing).toHaveLength(0);
     });
 
-    it("should detect missing AZURE_OPENAI_ENDPOINT", () => {
-      delete process.env.AZURE_OPENAI_ENDPOINT;
-      process.env.AZURE_OPENAI_API_KEY = "test-key";
+    it("should warn when no model-specific configurations exist", () => {
+      // Clear all model-specific configs
+      for (const key of Object.keys(process.env)) {
+        if (key.startsWith("AZURE_OPENAI_ENDPOINT_")) {
+          delete process.env[key];
+        }
+      }
 
       const result = validateAzureOpenAIEnv();
 
-      expect(result.valid).toBe(false);
-      expect(result.missing).toContain("AZURE_OPENAI_ENDPOINT");
+      expect(result.valid).toBe(true); // No required vars anymore, so still valid
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings.some((w) => w.includes("No model-specific configurations"))).toBe(true);
     });
 
-    it("should detect missing AZURE_OPENAI_API_KEY", () => {
-      process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
-      delete process.env.AZURE_OPENAI_API_KEY;
-
-      const result = validateAzureOpenAIEnv();
-
-      expect(result.valid).toBe(false);
-      expect(result.missing).toContain("AZURE_OPENAI_API_KEY");
-    });
-
-    it("should detect all missing required variables", () => {
+    it("should return valid even without default endpoint and API key", () => {
       delete process.env.AZURE_OPENAI_ENDPOINT;
       delete process.env.AZURE_OPENAI_API_KEY;
+      // But have a model-specific config
+      process.env.AZURE_OPENAI_ENDPOINT_GPT_4O = "https://gpt4o.openai.azure.com";
+      process.env.AZURE_OPENAI_API_KEY_GPT_4O = "gpt4o-key";
 
       const result = validateAzureOpenAIEnv();
 
-      expect(result.valid).toBe(false);
-      expect(result.missing).toHaveLength(2);
-      expect(result.missing).toContain("AZURE_OPENAI_ENDPOINT");
-      expect(result.missing).toContain("AZURE_OPENAI_API_KEY");
+      expect(result.valid).toBe(true);
+      expect(result.missing).toHaveLength(0);
+    });
+
+    it("should warn when no configurations exist at all", () => {
+      delete process.env.AZURE_OPENAI_ENDPOINT;
+      delete process.env.AZURE_OPENAI_API_KEY;
+      // Clear all model-specific configs
+      for (const key of Object.keys(process.env)) {
+        if (key.startsWith("AZURE_OPENAI_ENDPOINT_")) {
+          delete process.env[key];
+        }
+      }
+
+      const result = validateAzureOpenAIEnv();
+
+      expect(result.valid).toBe(true); // No required vars in new system
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings.some((w) => w.includes("No model-specific configurations"))).toBe(true);
     });
 
     it("should warn when optional variables are missing", () => {
@@ -72,10 +85,10 @@ describe("Environment Variable Validation", () => {
       expect(result.warnings.some((w) => w.includes("AZURE_OPENAI_DEPLOYMENT"))).toBe(true);
     });
 
-    it("should not warn when optional variables are set", () => {
-      process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
-      process.env.AZURE_OPENAI_API_KEY = "test-key";
-      process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5.2";
+    it("should not warn when model-specific configs and optional variables are set", () => {
+      process.env.AZURE_OPENAI_ENDPOINT_GPT_5_NANO = "https://test.openai.azure.com";
+      process.env.AZURE_OPENAI_API_KEY_GPT_5_NANO = "test-key";
+      process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-nano";
       process.env.AZURE_OPENAI_API_VERSION = "2024-12-01-preview";
 
       const result = validateAzureOpenAIEnv();
@@ -86,13 +99,14 @@ describe("Environment Variable Validation", () => {
   });
 
   describe("getRequiredEnvVarsMessage", () => {
-    it("should return a formatted message", () => {
+    it("should return a formatted message with model-specific instructions", () => {
       const message = getRequiredEnvVarsMessage();
 
-      expect(message).toContain("AZURE_OPENAI_ENDPOINT");
-      expect(message).toContain("AZURE_OPENAI_API_KEY");
+      expect(message).toContain("Model-Specific Configuration");
+      expect(message).toContain("AZURE_OPENAI_ENDPOINT_<MODEL_NAME>");
+      expect(message).toContain("AZURE_OPENAI_API_KEY_<MODEL_NAME>");
       expect(message).toContain("local.settings.json");
-      expect(message).toContain(".env");
+      expect(message).toContain("Azure Portal");
     });
   });
 
