@@ -11,3 +11,4 @@ app.http("imageGenerate", {
   authLevel: "function",
   handler: imageGenerateHandler,
 });
+

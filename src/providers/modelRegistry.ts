@@ -99,6 +99,52 @@ export const MODEL_REGISTRY: Record<string, ModelCapabilities> = {
     supports_streaming: false,
   },
 
+  // GPT-5 Models (Azure OpenAI - supports reasoning_effort parameter)
+  "gpt-5.2": {
+    chat: true,
+    vision: true,
+    image_generate: false,
+    tool_calls: true,
+    json_mode: true,
+    reasoning: true,
+    max_context_tokens: 128000,
+    max_output_tokens: 16384,
+    supports_streaming: true,
+  },
+  "gpt-5-nano": {
+    chat: true,
+    vision: true,
+    image_generate: false,
+    tool_calls: true,
+    json_mode: true,
+    reasoning: true,
+    max_context_tokens: 128000,
+    max_output_tokens: 16384,
+    supports_streaming: true,
+  },
+  "gpt-5": {
+    chat: true,
+    vision: true,
+    image_generate: false,
+    tool_calls: true,
+    json_mode: true,
+    reasoning: true,
+    max_context_tokens: 128000,
+    max_output_tokens: 16384,
+    supports_streaming: true,
+  },
+  "gpt-5-mini": {
+    chat: true,
+    vision: true,
+    image_generate: false,
+    tool_calls: true,
+    json_mode: true,
+    reasoning: true,
+    max_context_tokens: 64000,
+    max_output_tokens: 8192,
+    supports_streaming: true,
+  },
+
   // Image generation models
   "dall-e-2": {
     chat: false,
@@ -230,3 +276,4 @@ export function getModelsForProvider(provider: string): string[] {
   // maintain a separate mapping or query the provider's model list
   return Object.keys(MODEL_REGISTRY);
 }
+

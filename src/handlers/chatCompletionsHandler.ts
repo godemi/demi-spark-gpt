@@ -1,12 +1,12 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import { v4 as uuidv4 } from "uuid";
 import { processInputAttachments } from "../attachments/inputProcessor";
-import { buildProviderConfig } from "../config/providers";
+import { buildProviderConfig, loadProviderConfig } from "../config/providers";
 import { applyGuardrails } from "../guardrails/profiles";
 import { ChatCompletionRequest, ChatCompletionRequestSchema } from "../models/chatCompletionTypes";
 import { logError, logRequest, logResponse } from "../observability/logger";
 import { telemetry } from "../observability/telemetry";
-import { getProviderAdapter } from "../providers";
+import { getProviderAdapter, resolveModel, applyResolvedModelSettings } from "../providers";
 import { SSEWriter } from "../streaming/sseWriter";
 import { APIException } from "../utils/exceptions";
 import { addCorsHeaders } from "../utils/httpJsonResponse";
@@ -95,11 +95,37 @@ export const chatCompletionsHandler = async (
       );
     }
 
+    // Load environment config for defaults
+    const envConfig = loadProviderConfig();
+
+    // Resolve model from direct model, task_profile, or default
+    let resolvedModel;
+    try {
+      resolvedModel = resolveModel({
+        requestModel: chatRequest.model,
+        taskProfile: chatRequest.task_profile,
+        defaultModel: envConfig.azure_openai.deployment,
+        defaultDeployment: envConfig.azure_openai.deployment,
+      });
+    } catch (resolveError) {
+      throw new APIException(
+        resolveError instanceof Error ? resolveError.message : String(resolveError),
+        400,
+        "INVALID_TASK_PROFILE",
+        undefined,
+        requestId
+      );
+    }
+
+    // Apply resolved model settings to the request
+    const resolvedRequest = applyResolvedModelSettings(resolvedModel, chatRequest);
+    const effectiveModel = resolvedModel.model;
+
     // Validate model capabilities
-    const capabilities = adapter.getCapabilities(chatRequest.model);
+    const capabilities = adapter.getCapabilities(effectiveModel);
     if (!capabilities) {
       throw new APIException(
-        `Unknown model: ${chatRequest.model}`,
+        `Unknown model: ${effectiveModel}`,
         400,
         "UNKNOWN_MODEL",
         undefined,
@@ -108,10 +134,10 @@ export const chatCompletionsHandler = async (
     }
 
     // Check if model supports requested features
-    if (chatRequest.messages.some(m => m.attachments?.length)) {
+    if (resolvedRequest.messages.some(m => m.attachments?.length)) {
       if (!capabilities.vision) {
         throw new APIException(
-          `Model ${chatRequest.model} does not support vision/attachments`,
+          `Model ${effectiveModel} does not support vision/attachments`,
           400,
           "CAPABILITY_NOT_SUPPORTED",
           undefined,
@@ -120,10 +146,10 @@ export const chatCompletionsHandler = async (
       }
     }
 
-    if (chatRequest.tools && chatRequest.tools.length > 0) {
+    if (resolvedRequest.tools && resolvedRequest.tools.length > 0) {
       if (!capabilities.tool_calls) {
         throw new APIException(
-          `Model ${chatRequest.model} does not support tool calling`,
+          `Model ${effectiveModel} does not support tool calling`,
           400,
           "CAPABILITY_NOT_SUPPORTED",
           undefined,
@@ -132,14 +158,14 @@ export const chatCompletionsHandler = async (
       }
     }
 
-    // Build provider config
+    // Build provider config with resolved deployment
     let providerConfig;
     try {
       providerConfig = buildProviderConfig(
         provider,
-        chatRequest.azure_endpoint,
-        chatRequest.azure_deployment,
-        chatRequest.api_version
+        resolvedRequest.azure_endpoint,
+        resolvedModel.deployment || resolvedRequest.azure_deployment,
+        resolvedRequest.api_version
       );
     } catch (configError) {
       throw new APIException(
@@ -152,31 +178,33 @@ export const chatCompletionsHandler = async (
     }
 
     // Process attachments
-    let processedMessages = chatRequest.messages;
-    if (chatRequest.messages.some(m => m.attachments?.length)) {
-      processedMessages = await processInputAttachments(chatRequest.messages, capabilities);
+    let processedMessages = resolvedRequest.messages;
+    if (resolvedRequest.messages.some(m => m.attachments?.length)) {
+      processedMessages = await processInputAttachments(resolvedRequest.messages, capabilities);
     }
 
     // Apply guardrails if enabled
-    if (chatRequest.system_guardrails_enabled && chatRequest.guardrail_profile) {
-      processedMessages = applyGuardrails(processedMessages, chatRequest.guardrail_profile);
+    if (resolvedRequest.system_guardrails_enabled && resolvedRequest.guardrail_profile) {
+      processedMessages = applyGuardrails(processedMessages, resolvedRequest.guardrail_profile);
     }
 
-    // Log request
+    // Log request (include task_profile info if used)
     logRequest(context, {
       requestId,
-      model: chatRequest.model,
+      model: effectiveModel,
       provider,
       messageCount: processedMessages.length,
-      stream: chatRequest.stream || false,
-      hasAttachments: chatRequest.messages.some(m => m.attachments?.length),
+      stream: resolvedRequest.stream || false,
+      hasAttachments: resolvedRequest.messages.some(m => m.attachments?.length),
+      taskProfile: resolvedModel.task_profile,
+      modelSource: resolvedModel.source,
     });
 
-    // Build provider request
-    const providerRequest = await adapter.buildRequest(chatRequest, providerConfig);
+    // Build provider request with resolved settings
+    const providerRequest = await adapter.buildRequest(resolvedRequest, providerConfig);
 
     // Execute request
-    if (chatRequest.stream) {
+    if (resolvedRequest.stream) {
       return await handleStreaming(
         adapter,
         providerRequest,
@@ -184,7 +212,7 @@ export const chatCompletionsHandler = async (
         requestId,
         startTime,
         context,
-        chatRequest.model,
+        effectiveModel,
         provider
       );
     } else {
@@ -195,7 +223,7 @@ export const chatCompletionsHandler = async (
         requestId,
         startTime,
         context,
-        chatRequest.model,
+        effectiveModel,
         provider
       );
     }

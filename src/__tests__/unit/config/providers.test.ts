@@ -93,7 +93,7 @@ describe("loadProviderConfig", () => {
 
     const config = loadProviderConfig();
 
-    expect(config.azure_openai.api_version).toBe("2024-10-21");
+    expect(config.azure_openai.api_version).toBe("2024-12-01-preview");
   });
 
   it("should use default deployment for Azure OpenAI", () => {
@@ -102,7 +102,43 @@ describe("loadProviderConfig", () => {
 
     const config = loadProviderConfig();
 
-    expect(config.azure_openai.deployment).toBe("gpt-4o");
+    expect(config.azure_openai.deployment).toBe("gpt-5-nano");
+  });
+
+  it("should normalize endpoint with /openai/v1 path", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com/openai/v1";
+    process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5.2";
+
+    const config = loadProviderConfig();
+
+    expect(config.azure_openai.endpoint).toBe("https://test.openai.azure.com");
+    expect(config.azure_openai.deployment).toBe("gpt-5.2");
+  });
+
+  it("should normalize endpoint with /openai/v1/chat/completions path", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com/openai/v1/chat/completions";
+
+    const config = loadProviderConfig();
+
+    expect(config.azure_openai.endpoint).toBe("https://test.openai.azure.com");
+  });
+
+  it("should normalize endpoint with query parameters", () => {
+    process.env.AZURE_OPENAI_ENDPOINT =
+      "https://test.openai.azure.com/openai/deployments/gpt-5.2/chat/completions?api-version=2024-12-01-preview";
+
+    const config = loadProviderConfig();
+
+    expect(config.azure_openai.endpoint).toBe("https://test.openai.azure.com");
+    expect(config.azure_openai.deployment).toBe("gpt-5.2");
+  });
+
+  it("should handle endpoint with trailing slash", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com/";
+
+    const config = loadProviderConfig();
+
+    expect(config.azure_openai.endpoint).toBe("https://test.openai.azure.com");
   });
 
   it("should support AAD authentication type", () => {
@@ -120,9 +156,9 @@ describe("buildProviderConfig", () => {
     vi.resetModules();
     process.env = {
       AZURE_OPENAI_ENDPOINT: "https://test.openai.azure.com",
-      AZURE_OPENAI_DEPLOYMENT: "gpt-4o",
+      AZURE_OPENAI_DEPLOYMENT: "gpt-5-nano",
       AZURE_OPENAI_API_KEY: "test-key",
-      AZURE_OPENAI_API_VERSION: "2024-10-21",
+      AZURE_OPENAI_API_VERSION: "2024-12-01-preview",
       AZURE_OPENAI_AUTH_TYPE: "api-key",
     };
   });
@@ -132,9 +168,9 @@ describe("buildProviderConfig", () => {
 
     expect(config.provider).toBe("azure-openai");
     expect(config.endpoint).toBe("https://test.openai.azure.com");
-    expect(config.deployment).toBe("gpt-4o");
+    expect(config.deployment).toBe("gpt-5-nano");
     expect(config.apiKey).toBe("test-key");
-    expect(config.apiVersion).toBe("2024-10-21");
+    expect(config.apiVersion).toBe("2024-12-01-preview");
     expect(config.authType).toBe("api-key");
   });
 

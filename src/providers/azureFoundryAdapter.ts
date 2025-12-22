@@ -67,8 +67,10 @@ export class AzureFoundryAdapter implements ProviderAdapter {
     config: ProviderConfig
   ): Promise<ProviderRequest> {
     // Azure AI Foundry uses the same request format as Azure OpenAI
+    // Model is resolved from: config.deployment > config.model > params.model > default
+    const model = config.deployment || config.model || params.model || "gpt-4o";
     const request: ProviderRequest = {
-      model: config.deployment || config.model || params.model,
+      model,
       messages: params.messages.map(this.normalizeMessage),
       stream: params.stream,
     };

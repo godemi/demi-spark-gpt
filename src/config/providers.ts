@@ -28,6 +28,31 @@ export interface ProviderEnvConfig {
 }
 
 /**
+ * Normalize Azure OpenAI endpoint URL
+ * Removes paths like /openai/v1, /openai/deployments/{deployment}, /chat/completions
+ */
+function normalizeAzureEndpoint(url: string): string {
+  let normalized = url;
+
+  // Remove trailing slash
+  normalized = normalized.replace(/\/+$/, "");
+
+  // Remove /openai/v1 or /openai/v1/chat/completions suffix
+  normalized = normalized.replace(/\/openai\/v1(\/chat\/completions)?$/, "");
+
+  // Remove /openai/deployments/{deployment} suffix
+  normalized = normalized.replace(/\/openai\/deployments\/[^/]+.*$/, "");
+
+  // Remove /chat/completions suffix
+  normalized = normalized.replace(/\/chat\/completions.*$/, "");
+
+  // Remove query parameters
+  normalized = normalized.replace(/\?.*$/, "");
+
+  return normalized;
+}
+
+/**
  * Load provider configuration from environment variables
  */
 export function loadProviderConfig(): ProviderEnvConfig {
@@ -40,20 +65,17 @@ export function loadProviderConfig(): ProviderEnvConfig {
   const deploymentMatch = endpointUrl.match(/\/deployments\/([^/]+)/);
   if (deploymentMatch && !deployment) {
     deployment = deploymentMatch[1];
-    // Remove deployment from endpoint URL
-    endpoint = endpointUrl.replace(/\/deployments\/[^/]+/, "");
   }
 
-  // If endpoint contains /chat/completions, remove it
-  endpoint = endpoint.replace(/\/chat\/completions.*$/, "");
-  endpoint = endpoint.replace(/\?.*$/, "");
+  // Normalize endpoint URL
+  endpoint = normalizeAzureEndpoint(endpoint);
 
   const config: ProviderEnvConfig = {
     azure_openai: {
       endpoint: endpoint || getEnvVar("AZURE_OPENAI_ENDPOINT"),
-      deployment: deployment || getEnvVar("AZURE_OPENAI_DEPLOYMENT", "gpt-4o"),
+      deployment: deployment || getEnvVar("AZURE_OPENAI_DEPLOYMENT", "gpt-5-nano"),
       api_key: process.env.AZURE_OPENAI_API_KEY,
-      api_version: process.env.AZURE_OPENAI_API_VERSION || "2024-10-21",
+      api_version: process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview",
       auth_type: (process.env.AZURE_OPENAI_AUTH_TYPE || "api-key") as "api-key" | "aad",
     },
   };

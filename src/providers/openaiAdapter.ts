@@ -43,8 +43,10 @@ export class OpenAIAdapter implements ProviderAdapter {
     params: ChatCompletionRequest,
     config: ProviderConfig
   ): Promise<ProviderRequest> {
+    // Model is resolved from: params.model > config.model > default
+    const model = params.model || config.model || "gpt-4o";
     const request: ProviderRequest = {
-      model: params.model,
+      model,
       messages: params.messages.map(this.normalizeMessage),
       stream: params.stream,
     };

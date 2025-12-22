@@ -155,3 +155,4 @@ export function generateRequestWithTools(toolCount = 1): ChatCompletionRequest {
     tool_choice: "auto",
   };
 }
+

@@ -44,8 +44,11 @@ export interface ProviderRequest {
   top_p?: number;
   max_tokens?: number;
   max_completion_tokens?: number;
+  // Reasoning mode for o1/o3 models
   reasoning_mode?: "standard" | "deep" | "thinking";
   max_reasoning_tokens?: number;
+  // Reasoning effort for GPT-5 models (gpt-5, gpt-5-mini, gpt-5-nano, gpt-5.2)
+  reasoning_effort?: "none" | "low" | "medium" | "high" | "xhigh";
   response_format?: any;
   tools?: any[];
   tool_choice?: any;
@@ -104,3 +107,4 @@ export interface ProviderAdapter {
    */
   validateRequest(request: ChatCompletionRequest): boolean;
 }
+

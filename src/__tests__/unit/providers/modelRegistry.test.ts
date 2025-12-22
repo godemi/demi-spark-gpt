@@ -21,6 +21,10 @@ describe("MODEL_REGISTRY", () => {
       "o1-preview",
       "o1-mini",
       "o3-mini",
+      "gpt-5.2",
+      "gpt-5-nano",
+      "gpt-5",
+      "gpt-5-mini",
       "dall-e-2",
       "dall-e-3",
       "llama-3-70b",
@@ -101,6 +105,37 @@ describe("MODEL_REGISTRY", () => {
 
     const mistral = MODEL_REGISTRY["mistral-large"];
     expect(mistral.tool_calls).toBe(true);
+  });
+
+  it("should have correct capabilities for GPT-5 models", () => {
+    const gpt52 = MODEL_REGISTRY["gpt-5.2"];
+    expect(gpt52.chat).toBe(true);
+    expect(gpt52.vision).toBe(true);
+    expect(gpt52.tool_calls).toBe(true);
+    expect(gpt52.json_mode).toBe(true);
+    expect(gpt52.reasoning).toBe(true);
+    expect(gpt52.supports_streaming).toBe(true);
+    expect(gpt52.max_context_tokens).toBe(128000);
+    expect(gpt52.max_output_tokens).toBe(16384);
+
+    const gpt5Nano = MODEL_REGISTRY["gpt-5-nano"];
+    expect(gpt5Nano.chat).toBe(true);
+    expect(gpt5Nano.vision).toBe(true);
+    expect(gpt5Nano.tool_calls).toBe(true);
+    expect(gpt5Nano.json_mode).toBe(true);
+    expect(gpt5Nano.reasoning).toBe(true);
+    expect(gpt5Nano.supports_streaming).toBe(true);
+    expect(gpt5Nano.max_context_tokens).toBe(128000);
+    expect(gpt5Nano.max_output_tokens).toBe(16384);
+
+    const gpt5 = MODEL_REGISTRY["gpt-5"];
+    expect(gpt5.reasoning).toBe(true);
+    expect(gpt5.supports_streaming).toBe(true);
+
+    const gpt5Mini = MODEL_REGISTRY["gpt-5-mini"];
+    expect(gpt5Mini.reasoning).toBe(true);
+    expect(gpt5Mini.max_context_tokens).toBe(64000);
+    expect(gpt5Mini.max_output_tokens).toBe(8192);
   });
 });
 
@@ -254,3 +289,4 @@ describe("Model capability edge cases", () => {
     }
   });
 });
+

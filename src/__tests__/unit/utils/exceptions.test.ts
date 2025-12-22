@@ -232,3 +232,4 @@ describe("HALOError interface", () => {
     expect(haloError.error.provider_error).toBeDefined();
   });
 });
+

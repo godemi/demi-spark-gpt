@@ -65,6 +65,8 @@ export function logRequest(
     messageCount: number;
     stream: boolean;
     hasAttachments?: boolean;
+    taskProfile?: string;
+    modelSource?: string;
   }
 ): void {
   context.log({
@@ -76,6 +78,8 @@ export function logRequest(
     message_count: request.messageCount,
     stream: request.stream,
     has_attachments: request.hasAttachments || false,
+    task_profile: request.taskProfile,
+    model_source: request.modelSource,
     // Never log message content by default
   });
 }
@@ -126,3 +130,4 @@ export function logError(
     ...redactSecrets(additionalContext || {}),
   });
 }
+

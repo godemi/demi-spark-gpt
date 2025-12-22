@@ -47,3 +47,4 @@ describe("imageGenerateHandler", () => {
     expect([200, 400, 500]).toContain(response.status);
   });
 });
+

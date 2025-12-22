@@ -129,3 +129,4 @@ export class HALOTelemetry {
 
 // Singleton instance
 export const telemetry = new HALOTelemetry();
+

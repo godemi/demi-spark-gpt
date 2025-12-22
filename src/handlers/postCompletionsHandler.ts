@@ -1,5 +1,5 @@
 import { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
-import { DemiGPTInputParametersType, DemiGPTProcessedParametersType } from "../models/types";
+import { SparkGPTInputParametersType, SparkGPTProcessedParametersType } from "../models/types";
 import {
   getAzureChatGPTRequestJson,
   returnAzureChatGPTRequestStream,
@@ -77,8 +77,8 @@ export const postCompletionsHandler = async (
     }
 
     // Validate and process parameters.
-    const inputParams: DemiGPTInputParametersType = validateAndConvertParams(requestJson);
-    const processedParams: DemiGPTProcessedParametersType = generatePrePrompts(inputParams);
+    const inputParams: SparkGPTInputParametersType = validateAndConvertParams(requestJson);
+    const processedParams: SparkGPTProcessedParametersType = generatePrePrompts(inputParams);
     const chatMessages = buildChatMessages(processedParams);
 
     // Check streaming support.

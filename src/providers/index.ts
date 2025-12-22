@@ -21,6 +21,22 @@ export {
   getModelsForProvider,
 } from "./modelRegistry";
 
+// Task profiles and model selection
+export {
+  TASK_PROFILES,
+  getTaskProfile,
+  getTaskProfileNames,
+  isValidTaskProfile,
+} from "./taskProfiles";
+export type { TaskProfile } from "./taskProfiles";
+
+export {
+  resolveModel,
+  applyResolvedModelSettings,
+  describeResolution,
+} from "./modelSelector";
+export type { ResolvedModel, ResolveModelOptions } from "./modelSelector";
+
 import { AzureOpenAIAdapter } from "./azureOpenAIAdapter";
 import { OpenAIAdapter } from "./openaiAdapter";
 import { AzureFoundryAdapter } from "./azureFoundryAdapter";

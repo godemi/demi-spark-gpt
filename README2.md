@@ -26,7 +26,7 @@ The following provides an example on how to use the app.
 The project is hosted on GitHub at:
 
 ```
-https://github.com/demi-ai-dev/demigpt
+https://github.com/demi-ai-dev/demisparkgpt
 ```
 
 ### Getting Access
@@ -38,13 +38,13 @@ https://github.com/demi-ai-dev/demigpt
 
 ```bash
 # Clone using HTTPS
-git clone https://github.com/demi-ai-dev/demigpt.git
+git clone https://github.com/demi-ai-dev/demisparkgpt.git
 
 # Or clone using SSH (if configured)
-git clone git@github.com:demi-ai-dev/demigpt.git
+git clone git@github.com:demi-ai-dev/demisparkgpt.git
 
 # Navigate to the TypeScript implementation folder
-cd demigpt/SPARK/AzureFunctions/demigpt_node_ts
+cd demisparkgpt/SPARK/AzureFunctions/demisparkgpt_node_ts
 ```
 
 ### Branch Structure
@@ -70,8 +70,8 @@ cd demigpt/SPARK/AzureFunctions/demigpt_node_ts
 
 ```bash
 # Clone the repository (see Repository Access section)
-git clone https://github.com/demi-ai-dev/demigpt.git
-cd demigpt/SPARK/AzureFunctions/demigpt_node_ts
+git clone https://github.com/demi-ai-dev/demisparkgpt.git
+cd demisparkgpt/SPARK/AzureFunctions/demisparkgpt_node_ts
 
 # Install dependencies
 npm install
@@ -361,7 +361,7 @@ npm run watch
 ### Project Structure
 
 ```plaintext
-demigpt_node_ts/
+demisparkgpt_node_ts/
 ├── src/
 │   ├── functions/                    # Azure Function endpoints
 │   │   ├── getInfoHandler.ts         # Provides API documentation and parameter info
@@ -408,7 +408,7 @@ _The deployment script performs the following steps:_
 3. Configures Azure CLI settings (enabling dynamic extension installs).
 4. Sets the subscription context.
 5. Prompts to clean and rebuild the project.
-6. Publishes the Azure Function (`demigpt`) to your Azure subscription.
+6. Publishes the Azure Function (`demisparkgpt`) to your Azure subscription.
 
 ### Manual Deployment
 
@@ -417,7 +417,7 @@ _The deployment script performs the following steps:_
 npm run build
 
 # Deploy to Azure using Azure Functions Core Tools
-func azure functionapp publish demigpt
+func azure functionapp publish demisparkgpt
 ```
 
 ## Testing
@@ -450,7 +450,7 @@ npm run test:watch     # Run tests in watch mode (if available)
      ```
    - Check the status of your Function App:
      ```bash
-     az functionapp show --name demigpt --resource-group yourResourceGroup
+     az functionapp show --name demisparkgpt --resource-group yourResourceGroup
      ```
 
 2. **Build Errors**
@@ -465,7 +465,7 @@ npm run test:watch     # Run tests in watch mode (if available)
 3. **Deployment Issues**
    - Tail the Azure Function logs:
      ```bash
-     az functionapp logs tail --name demigpt
+     az functionapp logs tail --name demisparkgpt
      ```
 
 ### Getting Help

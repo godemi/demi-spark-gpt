@@ -10,7 +10,7 @@ export interface ParameterMetadataEntry {
 }
 
 /**
- * Contains metadata for all supported parameters in the DemiGPT API
+ * Contains metadata for all supported parameters in the SparkGPT API
  * Used for API documentation and parameter guidance
  *
  * Structure:

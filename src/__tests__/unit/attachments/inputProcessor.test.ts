@@ -208,3 +208,4 @@ describe("validateAttachment", () => {
     expect(() => validateAttachment(attachment)).toThrow(APIException);
   });
 });
+

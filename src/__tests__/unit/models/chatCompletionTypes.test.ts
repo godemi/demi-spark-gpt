@@ -155,6 +155,40 @@ describe("ChatCompletionRequestSchema", () => {
       }
     });
 
+    it("should validate request with reasoning_effort for GPT-5 models", () => {
+      const efforts = ["none", "low", "medium", "high", "xhigh"];
+      for (const effort of efforts) {
+        const result = ChatCompletionRequestSchema.safeParse({
+          ...validChatRequest,
+          model: "gpt-5.2",
+          reasoning_effort: effort,
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("should validate request with task_profile instead of model", () => {
+      const profiles = ["fast", "balanced", "reasoning", "deep_reasoning", "creative", "cost_effective"];
+      for (const profile of profiles) {
+        const request = { ...validChatRequest };
+        delete request.model;
+        const result = ChatCompletionRequestSchema.safeParse({
+          ...request,
+          task_profile: profile,
+        });
+        expect(result.success).toBe(true);
+      }
+    });
+
+    it("should validate request with both model and task_profile (model takes precedence)", () => {
+      const result = ChatCompletionRequestSchema.safeParse({
+        ...validChatRequest,
+        model: "gpt-5.2",
+        task_profile: "fast",
+      });
+      expect(result.success).toBe(true);
+    });
+
     it("should validate request with tool_choice options", () => {
       const toolChoices = ["auto", "none", { type: "function", function: { name: "get_weather" } }];
       for (const toolChoice of toolChoices) {
@@ -177,12 +211,45 @@ describe("ChatCompletionRequestSchema", () => {
   });
 
   describe("Invalid requests", () => {
-    it("should reject request missing required model field", () => {
+    it("should reject request missing both model and task_profile", () => {
+      const request = { ...validChatRequest };
+      delete request.model;
+      const result = ChatCompletionRequestSchema.safeParse(request);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some(
+            issue => issue.message.includes("model") || issue.message.includes("task_profile")
+          )
+        ).toBe(true);
+      }
+    });
+
+    it("should reject request missing required model field (when task_profile also missing)", () => {
       const result = ChatCompletionRequestSchema.safeParse(invalidRequestMissingModel);
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues.some(issue => issue.path.includes("model"))).toBe(true);
       }
+    });
+
+    it("should reject request with invalid task_profile", () => {
+      const request = { ...validChatRequest };
+      delete request.model;
+      const result = ChatCompletionRequestSchema.safeParse({
+        ...request,
+        task_profile: "invalid-profile",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("should reject request with invalid reasoning_effort", () => {
+      const result = ChatCompletionRequestSchema.safeParse({
+        ...validChatRequest,
+        model: "gpt-5.2",
+        reasoning_effort: "invalid",
+      });
+      expect(result.success).toBe(false);
     });
 
     it("should reject request missing required messages field", () => {

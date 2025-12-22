@@ -43,3 +43,4 @@ export const invalidImageGenerateRequestInvalidN = {
   ...validImageGenerateRequest,
   n: 11, // Exceeds maximum
 };
+

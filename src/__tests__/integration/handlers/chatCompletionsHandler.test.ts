@@ -238,6 +238,132 @@ describe("chatCompletionsHandler", () => {
     });
   });
 
+  describe("Task profile integration", () => {
+    it("should resolve task_profile to model", async () => {
+      const requestData = {
+        ...validChatRequest,
+        model: undefined,
+        task_profile: "fast",
+      };
+      const request = createMockHttpRequest(requestData, "POST");
+      mockAdapter.getCapabilities.mockReturnValue({
+        chat: true,
+        vision: true,
+        image_generate: false,
+        tool_calls: true,
+        json_mode: true,
+        reasoning: true,
+        max_context_tokens: 128000,
+        max_output_tokens: 16384,
+        supports_streaming: true,
+      });
+
+      const response = await chatCompletionsHandler(request, context);
+
+      expect(response.status).toBe(200);
+      expect(mockAdapter.buildRequest).toHaveBeenCalled();
+      // Verify that the resolved model was used
+      const buildRequestCall = mockAdapter.buildRequest.mock.calls[0];
+      expect(buildRequestCall[0].model).toBe("gpt-5-nano");
+    });
+
+    it("should prioritize direct model over task_profile", async () => {
+      const requestData = {
+        ...validChatRequest,
+        model: "gpt-5.2",
+        task_profile: "fast",
+      };
+      const request = createMockHttpRequest(requestData, "POST");
+      mockAdapter.getCapabilities.mockReturnValue({
+        chat: true,
+        vision: true,
+        image_generate: false,
+        tool_calls: true,
+        json_mode: true,
+        reasoning: true,
+        max_context_tokens: 128000,
+        max_output_tokens: 16384,
+        supports_streaming: true,
+      });
+
+      const response = await chatCompletionsHandler(request, context);
+
+      expect(response.status).toBe(200);
+      const buildRequestCall = mockAdapter.buildRequest.mock.calls[0];
+      expect(buildRequestCall[0].model).toBe("gpt-5.2");
+    });
+
+    it("should reject invalid task_profile", async () => {
+      const requestData = {
+        ...validChatRequest,
+        model: undefined,
+        task_profile: "invalid-profile",
+      };
+      const request = createMockHttpRequest(requestData, "POST");
+
+      const response = await chatCompletionsHandler(request, context);
+
+      expect(response.status).toBe(400);
+      const body = JSON.parse(response.body as string);
+      expect(body.error.code).toBe("INVALID_TASK_PROFILE");
+    });
+
+    it("should apply reasoning_effort from task_profile", async () => {
+      const requestData = {
+        ...validChatRequest,
+        model: undefined,
+        task_profile: "reasoning",
+      };
+      const request = createMockHttpRequest(requestData, "POST");
+      mockAdapter.getCapabilities.mockReturnValue({
+        chat: true,
+        vision: true,
+        image_generate: false,
+        tool_calls: true,
+        json_mode: true,
+        reasoning: true,
+        max_context_tokens: 128000,
+        max_output_tokens: 16384,
+        supports_streaming: true,
+      });
+
+      const response = await chatCompletionsHandler(request, context);
+
+      expect(response.status).toBe(200);
+      const buildRequestCall = mockAdapter.buildRequest.mock.calls[0];
+      expect(buildRequestCall[0].reasoning_effort).toBe("high");
+      expect(buildRequestCall[0].model).toBe("gpt-5.2");
+    });
+
+    it("should not override explicit reasoning_effort when using task_profile", async () => {
+      const requestData = {
+        ...validChatRequest,
+        model: undefined,
+        task_profile: "reasoning",
+        reasoning_effort: "low",
+      };
+      const request = createMockHttpRequest(requestData, "POST");
+      mockAdapter.getCapabilities.mockReturnValue({
+        chat: true,
+        vision: true,
+        image_generate: false,
+        tool_calls: true,
+        json_mode: true,
+        reasoning: true,
+        max_context_tokens: 128000,
+        max_output_tokens: 16384,
+        supports_streaming: true,
+      });
+
+      const response = await chatCompletionsHandler(request, context);
+
+      expect(response.status).toBe(200);
+      const buildRequestCall = mockAdapter.buildRequest.mock.calls[0];
+      // Explicit reasoning_effort should take precedence
+      expect(buildRequestCall[0].reasoning_effort).toBe("low");
+    });
+  });
+
   describe("Error handling", () => {
     it("should handle configuration errors", async () => {
       const request = createMockHttpRequest(validChatRequest, "POST");

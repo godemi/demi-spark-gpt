@@ -126,13 +126,37 @@ export const ToolChoiceSchema = z.union([
 export type ToolChoice = z.infer<typeof ToolChoiceSchema>;
 
 /**
+ * Task profile for automatic model selection
+ */
+export const TaskProfileSchema = z.enum([
+  "fast",
+  "balanced",
+  "reasoning",
+  "deep_reasoning",
+  "creative",
+  "cost_effective",
+]);
+
+export type TaskProfile = z.infer<typeof TaskProfileSchema>;
+
+/**
+ * Reasoning effort levels for GPT-5 models
+ */
+export const ReasoningEffortSchema = z.enum(["none", "low", "medium", "high", "xhigh"]);
+
+export type ReasoningEffort = z.infer<typeof ReasoningEffortSchema>;
+
+/**
  * Main chat completion request schema
  */
 export const ChatCompletionRequestSchema = z.object({
   // Required fields
   api_version: z.string(),
-  model: z.string(),
+  model: z.string().optional(), // Optional when task_profile is used
   messages: z.array(ChatMessageSchema).min(1),
+
+  // Task-based model selection (alternative to direct model selection)
+  task_profile: TaskProfileSchema.optional(),
 
   // Provider routing
   provider: z.enum(["azure-openai", "openai", "azure-ai-foundry"]).optional(),
@@ -149,6 +173,9 @@ export const ChatCompletionRequestSchema = z.object({
   // Reasoning mode (o1/o3 models)
   reasoning_mode: z.enum(["standard", "deep", "thinking"]).optional(),
   max_reasoning_tokens: z.number().int().optional(),
+
+  // Reasoning effort (GPT-5 models: gpt-5, gpt-5-mini, gpt-5-nano, gpt-5.2)
+  reasoning_effort: ReasoningEffortSchema.optional(),
 
   // Advanced parameters
   response_format: ResponseFormatSchema.optional(),
@@ -169,7 +196,10 @@ export const ChatCompletionRequestSchema = z.object({
   image_params: ImageParamsSchema.optional(),
   system_guardrails_enabled: z.boolean().default(false),
   guardrail_profile: z.string().optional(),
-});
+}).refine(
+  (data) => data.model || data.task_profile,
+  { message: "Either 'model' or 'task_profile' must be specified" }
+);
 
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 
@@ -271,3 +301,4 @@ export const FinalChunkSchema = SSEChunkSchema.extend({
 });
 
 export type FinalChunk = z.infer<typeof FinalChunkSchema>;
+

@@ -152,3 +152,4 @@ export function validateAttachment(attachment: Attachment): void {
     }
   }
 }
+

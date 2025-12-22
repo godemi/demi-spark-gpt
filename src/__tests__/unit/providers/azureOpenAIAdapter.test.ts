@@ -46,6 +46,7 @@ describe("AzureOpenAIAdapter", () => {
         max_completion_tokens: 500,
         reasoning_mode: "deep",
         max_reasoning_tokens: 10000,
+        reasoning_effort: "high",
         response_format: "json",
         tools: [
           {
@@ -76,6 +77,7 @@ describe("AzureOpenAIAdapter", () => {
       expect(request.max_completion_tokens).toBe(500);
       expect(request.reasoning_mode).toBe("deep");
       expect(request.max_reasoning_tokens).toBe(10000);
+      expect(request.reasoning_effort).toBe("high");
       expect(request.response_format).toBe("json");
       expect(request.tools).toBeDefined();
       expect(request.tool_choice).toBe("auto");
@@ -88,6 +90,33 @@ describe("AzureOpenAIAdapter", () => {
       expect(request.logprobs).toBe(true);
       expect(request.top_logprobs).toBe(5);
       expect(request.user).toBe("test-user");
+    });
+
+    it("should include reasoning_effort parameter for GPT-5 models", async () => {
+      const requestWithReasoningEffort: ChatCompletionRequest = {
+        ...validChatRequest,
+        model: "gpt-5.2",
+        reasoning_effort: "high",
+      };
+
+      const request = await adapter.buildRequest(requestWithReasoningEffort, config);
+
+      expect(request.reasoning_effort).toBe("high");
+    });
+
+    it("should support all reasoning_effort values", async () => {
+      const efforts = ["none", "low", "medium", "high", "xhigh"] as const;
+
+      for (const effort of efforts) {
+        const requestWithEffort: ChatCompletionRequest = {
+          ...validChatRequest,
+          model: "gpt-5-nano",
+          reasoning_effort: effort,
+        };
+
+        const request = await adapter.buildRequest(requestWithEffort, config);
+        expect(request.reasoning_effort).toBe(effort);
+      }
     });
 
     it("should normalize messages with attachments", async () => {
@@ -192,6 +221,27 @@ describe("AzureOpenAIAdapter", () => {
         adapter.buildRequest(validChatRequest, aadConfig);
       }).not.toThrow();
     });
+
+    it("should normalize endpoint URLs correctly", async () => {
+      const endpoints = [
+        "https://test.openai.azure.com",
+        "https://test.openai.azure.com/",
+        "https://test.openai.azure.com/openai/v1",
+        "https://test.openai.azure.com/openai/v1/chat/completions",
+        "https://test.openai.azure.com/openai/deployments/gpt-5.2",
+        "https://test.openai.azure.com/openai/deployments/gpt-5.2/chat/completions?api-version=2024-12-01-preview",
+      ];
+
+      for (const endpoint of endpoints) {
+        const customConfig: ProviderConfig = {
+          ...config,
+          endpoint,
+        };
+
+        // Should not throw and should normalize endpoint
+        await expect(adapter.buildRequest(validChatRequest, customConfig)).resolves.toBeDefined();
+      }
+    });
   });
 
   describe("Message normalization", () => {
@@ -247,3 +297,4 @@ describe("AzureOpenAIAdapter", () => {
     });
   });
 });
+

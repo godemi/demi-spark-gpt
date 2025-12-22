@@ -2,7 +2,7 @@ import { z } from "zod";
 import { PARAMETER_CONSTRAINTS, ParameterName } from "./parameterConstraints";
 
 /**
- * Type Definitions for DemiGPT API
+ * Type Definitions for SparkGPT API
  *
  * This file contains all type definitions and schemas used throughout the application.
  * It uses Zod for runtime type validation and TypeScript for static typing.
@@ -89,9 +89,9 @@ export const PrePromptTypeSchema = z.object({
 export type PrePromptType = z.infer<typeof PrePromptTypeSchema>;
 
 /**
- * DemiGPTInputParametersType: Represents the input parameters for a DemiGPT request.
+ * SparkGPTInputParametersType: Represents the input parameters for a SparkGPT request.
  */
-export const DemiGPTInputParametersSchema = z.object({
+export const SparkGPTInputParametersSchema = z.object({
   // Main prompt(s)
   prompt: z.union([z.string(), z.array(z.string())]),
   // Optional streaming flag
@@ -148,20 +148,20 @@ export const DemiGPTInputParametersSchema = z.object({
     .optional(),
 });
 
-export type DemiGPTInputParametersType = z.infer<typeof DemiGPTInputParametersSchema>;
+export type SparkGPTInputParametersType = z.infer<typeof SparkGPTInputParametersSchema>;
 
 /**
- * DemiGPTProcessedParametersType: Extends the input parameters with pre-prompt arrays.
+ * SparkGPTProcessedParametersType: Extends the input parameters with pre-prompt arrays.
  */
-export const DemiGPTProcessedParametersSchema = DemiGPTInputParametersSchema.extend({
+export const SparkGPTProcessedParametersSchema = SparkGPTInputParametersSchema.extend({
   pre_prompts: z.array(PrePromptTypeSchema),
 });
-export type DemiGPTProcessedParametersType = z.infer<typeof DemiGPTProcessedParametersSchema>;
+export type SparkGPTProcessedParametersType = z.infer<typeof SparkGPTProcessedParametersSchema>;
 
 /**
- * DEFAULT_DEMI_GPT_PARAMETERS: Default values for DemiGPT parameters.
+ * DEFAULT_SPARK_GPT_PARAMETERS: Default values for SparkGPT parameters.
  */
-export const DEFAULT_DEMI_GPT_PARAMETERS: DemiGPTProcessedParametersType = {
+export const DEFAULT_SPARK_GPT_PARAMETERS: SparkGPTProcessedParametersType = {
   prompt: "",
   stream: false,
   temperature: 0.7,
@@ -244,7 +244,7 @@ export interface JSONObject {
   [key: string]: JSONValue;
 }
 
-export type JSONArray = JSONValue[];
+export interface JSONArray extends Array<JSONValue> {}
 
 /**
  * AzureChatGPTResponse represents the structured response from an Azure OpenAI request,

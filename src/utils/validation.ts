@@ -1,18 +1,18 @@
 import {
-  DEFAULT_DEMI_GPT_PARAMETERS,
-  DemiGPTInputParametersSchema,
-  DemiGPTInputParametersType,
+  DEFAULT_SPARK_GPT_PARAMETERS,
+  SparkGPTInputParametersSchema,
+  SparkGPTInputParametersType,
 } from "../models/types";
 import { APIException } from "./exceptions";
 
-const REQUEST_SCHEMA = DemiGPTInputParametersSchema.strict();
+const REQUEST_SCHEMA = SparkGPTInputParametersSchema.strict();
 
 const formatZodErrors = (issues: { path: (string | number)[]; message: string }[]): string =>
   issues.map(issue => `${issue.path.join(".") || "root"}: ${issue.message}`).join("; ");
 
 export const validateAndConvertParams = (
   reqBody: Record<string, any>
-): DemiGPTInputParametersType => {
+): SparkGPTInputParametersType => {
   const result = REQUEST_SCHEMA.safeParse(reqBody);
 
   if (!result.success) {
@@ -58,11 +58,11 @@ export const validateAndConvertParams = (
   }
 
   const merged = {
-    ...DEFAULT_DEMI_GPT_PARAMETERS,
+    ...DEFAULT_SPARK_GPT_PARAMETERS,
     ...parsed,
   };
 
   delete (merged as any).pre_prompts;
 
-  return merged as DemiGPTInputParametersType;
+  return merged as SparkGPTInputParametersType;
 };

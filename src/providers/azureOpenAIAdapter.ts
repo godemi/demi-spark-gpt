@@ -1,5 +1,5 @@
-import OpenAI from "openai";
-import { DefaultAzureCredential } from "@azure/identity";
+import { AzureOpenAI } from "openai";
+import { DefaultAzureCredential, getBearerTokenProvider } from "@azure/identity";
 import {
   ChatCompletionRequest,
   ChatCompletionResponse,
@@ -16,49 +16,67 @@ import { getModelCapabilities } from "./modelRegistry";
  * - API key and Azure AD authentication
  * - Streaming and non-streaming responses
  * - Multiple API versions
- * - Reasoning models (o1/o3)
+ * - GPT-5 reasoning models with reasoning_effort parameter
+ * - Both endpoint formats: /openai/deployments/{deployment} and /openai/v1
  */
 export class AzureOpenAIAdapter implements ProviderAdapter {
   name = "azure-openai";
-  private clients: Map<string, OpenAI> = new Map();
+  private clients: Map<string, AzureOpenAI> = new Map();
+
+  /**
+   * Normalize endpoint URL by removing trailing paths and extracting base URL
+   */
+  private normalizeEndpoint(endpoint: string): string {
+    // Remove trailing slash
+    let normalized = endpoint.replace(/\/+$/, "");
+
+    // Remove /openai/v1 or /openai/v1/chat/completions suffix if present
+    normalized = normalized.replace(/\/openai\/v1(\/chat\/completions)?$/, "");
+
+    // Remove /openai/deployments/{deployment} suffix if present
+    normalized = normalized.replace(/\/openai\/deployments\/[^/]+.*$/, "");
+
+    // Remove query parameters
+    normalized = normalized.replace(/\?.*$/, "");
+
+    return normalized;
+  }
 
   /**
    * Get or create an Azure OpenAI client for a configuration
    */
-  private getClient(config: ProviderConfig): OpenAI {
-    const key = `${config.endpoint}-${config.deployment}-${config.authType}`;
+  private getClient(config: ProviderConfig): AzureOpenAI {
+    const deployment = config.deployment || config.model;
+    const normalizedEndpoint = this.normalizeEndpoint(config.endpoint);
+    const key = `${normalizedEndpoint}-${deployment}-${config.authType}`;
 
     if (this.clients.has(key)) {
       return this.clients.get(key)!;
     }
 
-    let client: OpenAI;
+    let client: AzureOpenAI;
 
     if (config.authType === "aad") {
+      // Use Azure AD authentication with token provider
       const credential = new DefaultAzureCredential();
-      client = new OpenAI({
-        baseURL: `${config.endpoint}/openai/deployments/${config.deployment || config.model}`,
-        defaultQuery: { "api-version": config.apiVersion },
-        defaultHeaders: {
-          "api-key": "", // Will be replaced by token
-        },
-        // For AAD, we need to get token and set it in headers
-        // This is a simplified approach - in production, you might want to use a custom fetch
+      const azureADTokenProvider = getBearerTokenProvider(
+        credential,
+        "https://cognitiveservices.azure.com/.default"
+      );
+
+      client = new AzureOpenAI({
+        endpoint: normalizedEndpoint,
+        deployment: deployment,
+        apiVersion: config.apiVersion,
+        azureADTokenProvider,
       });
-
-      // Set up token refresh
-      const getToken = async () => {
-        const token = await credential.getToken("https://cognitiveservices.azure.com/.default");
-        return token.token;
-      };
-
-      // Store token getter for later use
-      (client as any)._getToken = getToken;
     } else {
-      client = new OpenAI({
-        baseURL: `${config.endpoint}/openai/deployments/${config.deployment || config.model}`,
-        defaultQuery: { "api-version": config.apiVersion },
+      // Use API key authentication
+      client = new AzureOpenAI({
+        endpoint: normalizedEndpoint,
         apiKey: config.apiKey,
+        deployment: deployment,
+        apiVersion: config.apiVersion,
       });
     }
 
@@ -70,8 +88,10 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     params: ChatCompletionRequest,
     config: ProviderConfig
   ): Promise<ProviderRequest> {
+    // Model is resolved from: config.deployment > config.model > params.model > default
+    const model = config.deployment || config.model || params.model || "gpt-5-nano";
     const request: ProviderRequest = {
-      model: config.deployment || config.model || params.model,
+      model,
       messages: params.messages.map(this.normalizeMessage),
       stream: params.stream,
     };
@@ -87,6 +107,8 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     if (params.max_reasoning_tokens !== undefined) {
       request.max_reasoning_tokens = params.max_reasoning_tokens;
     }
+    // Reasoning effort for GPT-5 models
+    if (params.reasoning_effort) request.reasoning_effort = params.reasoning_effort;
     if (params.response_format) request.response_format = params.response_format;
     if (params.tools) request.tools = params.tools;
     if (params.tool_choice) request.tool_choice = params.tool_choice;
@@ -113,19 +135,11 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     const client = this.getClient(config);
 
     try {
-      // For AAD auth, we need to inject the token
+      // AzureOpenAI handles authentication automatically (API key or AAD token)
       const options: any = {
         ...request,
         stream: true,
       };
-
-      // If using AAD, get token and add to headers
-      if (config.authType === "aad" && (client as any)._getToken) {
-        const token = await (client as any)._getToken();
-        options.headers = {
-          Authorization: `Bearer ${token}`,
-        };
-      }
 
       const stream = (await client.chat.completions.create(
         options
@@ -146,19 +160,11 @@ export class AzureOpenAIAdapter implements ProviderAdapter {
     const client = this.getClient(config);
 
     try {
-      // For AAD auth, we need to inject the token
+      // AzureOpenAI handles authentication automatically (API key or AAD token)
       const options: any = {
         ...request,
         stream: false,
       };
-
-      // If using AAD, get token and add to headers
-      if (config.authType === "aad" && (client as any)._getToken) {
-        const token = await (client as any)._getToken();
-        options.headers = {
-          Authorization: `Bearer ${token}`,
-        };
-      }
 
       const response = await client.chat.completions.create(options);
 
