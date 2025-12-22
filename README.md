@@ -54,6 +54,8 @@ You can initialize a project from this `azd` template in one of these ways:
 
 ## Prepare your local environment
 
+### 1. Create local.settings.json
+
 Add a file named `local.settings.json` in the root of your project with the following contents:
 
 ```json
@@ -61,10 +63,76 @@ Add a file named `local.settings.json` in the root of your project with the foll
     "IsEncrypted": false,
     "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "node"
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "WEBSITE_NODE_DEFAULT_VERSION": "~22"
     }
 }
 ```
+
+### 2. Configure Environment Variables
+
+**⚠️ IMPORTANT:** You must set the following environment variables to connect to Azure OpenAI models:
+
+#### Required Environment Variables
+
+1. **AZURE_OPENAI_ENDPOINT**
+   - Your Azure OpenAI endpoint URL
+   - Example: `https://your-resource.openai.azure.com`
+   - Find it in: Azure Portal > Azure OpenAI > Keys and Endpoint
+
+2. **AZURE_OPENAI_API_KEY**
+   - Your Azure OpenAI API key
+   - Find it in: Azure Portal > Azure OpenAI > Keys and Endpoint
+
+#### Optional Environment Variables
+
+3. **AZURE_OPENAI_DEPLOYMENT** (default: `gpt-5-nano`)
+   - The deployment name for your model
+   - Examples: `gpt-5.2`, `gpt-5-nano`, `gpt-4o`
+
+4. **AZURE_OPENAI_API_VERSION** (default: `2024-12-01-preview`)
+   - The API version to use
+   - Recommended: `2024-12-01-preview` for GPT-5 models
+
+5. **AZURE_OPENAI_AUTH_TYPE** (default: `api-key`)
+   - Authentication type: `"api-key"` or `"aad"`
+   - Use `"aad"` for Azure AD authentication
+
+#### Setting Environment Variables
+
+**For Azure Functions (local.settings.json):**
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "WEBSITE_NODE_DEFAULT_VERSION": "~22",
+    "AZURE_OPENAI_ENDPOINT": "https://your-resource.openai.azure.com",
+    "AZURE_OPENAI_API_KEY": "your-api-key-here",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-5-nano",
+    "AZURE_OPENAI_API_VERSION": "2024-12-01-preview"
+  }
+}
+```
+
+**For local development (.env file):**
+
+Create a `.env` file in the root directory:
+
+```bash
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_API_KEY=your-api-key-here
+AZURE_OPENAI_DEPLOYMENT=gpt-5-nano
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
+```
+
+**For production (Azure Portal):**
+
+Go to: Function App > Configuration > Application settings
+
+The application will validate environment variables at startup and show helpful error messages if any are missing.
 
 ## Run your app from the terminal
 

@@ -168,8 +168,26 @@ export const chatCompletionsHandler = async (
         resolvedRequest.api_version
       );
     } catch (configError) {
+      const errorMessage = configError instanceof Error ? configError.message : String(configError);
+      
+      // Provide helpful message for missing environment variables
+      if (errorMessage.includes("ENV Variable") || errorMessage.includes("not set")) {
+        throw new APIException(
+          `Missing required environment variable: ${errorMessage}\n\n` +
+          `Please set the required environment variables:\n` +
+          `- AZURE_OPENAI_ENDPOINT: Your Azure OpenAI endpoint URL\n` +
+          `- AZURE_OPENAI_API_KEY: Your Azure OpenAI API key\n\n` +
+          `For local development, set these in local.settings.json or .env file.\n` +
+          `For production, set them in Azure Portal > Function App > Configuration.`,
+          500,
+          "MISSING_ENV_VARIABLE",
+          undefined,
+          requestId
+        );
+      }
+      
       throw new APIException(
-        `Failed to build provider configuration: ${configError instanceof Error ? configError.message : String(configError)}`,
+        `Failed to build provider configuration: ${errorMessage}`,
         500,
         "PROVIDER_CONFIG_ERROR",
         undefined,
