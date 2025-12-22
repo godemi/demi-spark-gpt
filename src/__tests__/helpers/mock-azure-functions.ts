@@ -42,12 +42,7 @@ export function createMockInvocationContext(): InvocationContext {
       functionDirectory: "/test",
       retryContext: undefined,
     },
-    log: {
-      error: vi.fn(),
-      warn: vi.fn(),
-      info: vi.fn(),
-      verbose: vi.fn(),
-    } as any,
+    log: vi.fn(),
     error: vi.fn(),
     trace: vi.fn(),
     done: vi.fn(),

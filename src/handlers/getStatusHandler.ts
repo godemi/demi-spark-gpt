@@ -76,9 +76,36 @@ export async function getStatusHandler(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   try {
-    // Get and validate environment variables
-    const openAIUrl = getEnvVar("AZURE_OPENAI_ENDPOINT");
-    const apiKey = getEnvVar("AZURE_OPENAI_API_KEY");
+    // Check if any model-specific configurations exist
+    const modelConfigs: string[] = [];
+    for (const [key] of Object.entries(process.env)) {
+      if (key.startsWith("AZURE_OPENAI_ENDPOINT_") && !key.includes("_API_KEY_") && !key.includes("_API_VERSION_") && !key.includes("_AUTH_TYPE_")) {
+        const modelName = key.replace("AZURE_OPENAI_ENDPOINT_", "").toLowerCase().replace(/_/g, "-");
+        modelConfigs.push(modelName);
+      }
+    }
+
+    if (modelConfigs.length === 0) {
+      throw new APIException(
+        "No model configurations found",
+        500,
+        "Please configure at least one model using AZURE_OPENAI_ENDPOINT_<MODEL> and AZURE_OPENAI_API_KEY_<MODEL> environment variables."
+      );
+    }
+
+    // Use the first configured model for status check
+    const firstModel = modelConfigs[0];
+    const modelEnvKey = firstModel.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+    const openAIUrl = process.env[`AZURE_OPENAI_ENDPOINT_${modelEnvKey}`];
+    const apiKey = process.env[`AZURE_OPENAI_API_KEY_${modelEnvKey}`];
+
+    if (!openAIUrl || !apiKey) {
+      throw new APIException(
+        `Incomplete configuration for model: ${firstModel}`,
+        500,
+        `Please set both AZURE_OPENAI_ENDPOINT_${modelEnvKey} and AZURE_OPENAI_API_KEY_${modelEnvKey} environment variables.`
+      );
+    }
 
     // Validate URL format
     try {

@@ -197,7 +197,10 @@ describe("validateAttachment", () => {
 
   it("should validate base64 data size", () => {
     // Create a large base64 string (simulating large image)
-    const largeBase64 = "A".repeat(25 * 1024 * 1024); // 25MB
+    // Generate valid base64 data that decodes to > 20MB
+    // Base64 encoding increases size by ~33%, so we need ~27MB of base64 to get 20MB decoded
+    const largeData = Buffer.alloc(21 * 1024 * 1024, "A"); // 21MB of data
+    const largeBase64 = largeData.toString("base64"); // This will be ~28MB base64 string
 
     const attachment: Attachment = {
       type: "image",

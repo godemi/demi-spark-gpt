@@ -1,25 +1,22 @@
 /**
  * Main entry point for Azure Functions
- * Imports all function definitions to ensure they are registered
+ * 
+ * IMPORTANT: All function registrations must happen at the top level
+ * with no other code execution before them. This ensures Azure Functions
+ * can properly detect and register all HTTP triggers.
  */
 
-// Validate environment variables at startup
-import { validateEnvironmentVariables } from "./utils/envValidation";
+// Import Azure Functions app instance
+import { app } from "@azure/functions";
 
-// Validate environment variables and show helpful messages
-try {
-  validateEnvironmentVariables();
-} catch (error) {
-  console.error("⚠️  Environment validation error:", error);
-  console.error(
-    "\n📝 Please ensure all required environment variables are set.\n"
-  );
-}
-
-// Import all function definitions
+// Register all HTTP functions - these MUST be imported first
+// and executed synchronously during module load
 import "./functions/httpGetInfo";
-import "./functions/httpGetModels"; // Models list endpoint
+import "./functions/httpGetModels";
 import "./functions/httpGetStatus";
-import "./functions/httpPostChatCompletions"; // New HALO endpoint
-import "./functions/httpPostCompletions"; // Legacy endpoint (deprecated)
-import "./functions/httpPostImageGenerate"; // Image generation endpoint
+import "./functions/httpPostChatCompletions";
+import "./functions/httpPostCompletions";
+import "./functions/httpPostImageGenerate";
+
+// Export app instance for Azure Functions runtime
+export { app };

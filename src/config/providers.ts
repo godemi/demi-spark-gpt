@@ -1,5 +1,6 @@
 import { getEnvVar } from "../utils/config";
 import { ProviderConfig } from "../providers/types";
+import { MODEL_REGISTRY } from "../providers/modelRegistry";
 
 /**
  * Azure OpenAI endpoint configuration
@@ -18,7 +19,11 @@ export interface AzureOpenAIConfig {
  * Loads and validates provider configurations from environment variables
  */
 export interface ProviderEnvConfig {
-  azure_openai: AzureOpenAIConfig;
+  azure_openai: {
+    deployment: string; // Default deployment name only (for fallback when no model specified)
+    api_version: string; // Default API version
+    auth_type: "api-key" | "aad"; // Default auth type
+  };
   azure_openai_endpoints: Map<string, AzureOpenAIConfig>; // Map of endpoint URL -> config
   azure_openai_models: Map<string, AzureOpenAIConfig>; // Map of model name -> config
   openai?: {
@@ -36,7 +41,7 @@ export interface ProviderEnvConfig {
 
 /**
  * Normalize Azure OpenAI endpoint URL
- * Removes paths like /openai/v1, /openai/deployments/{deployment}, /chat/completions
+ * Removes paths like /openai/v1, /openai/deployments/{deployment}, /chat/completions, /openai/responses
  */
 function normalizeAzureEndpoint(url: string): string {
   let normalized = url;
@@ -49,6 +54,9 @@ function normalizeAzureEndpoint(url: string): string {
 
   // Remove /openai/deployments/{deployment} suffix
   normalized = normalized.replace(/\/openai\/deployments\/[^/]+.*$/, "");
+
+  // Remove /openai/responses suffix (for GPT-5.2 responses endpoint)
+  normalized = normalized.replace(/\/openai\/responses.*$/, "");
 
   // Remove /chat/completions suffix
   normalized = normalized.replace(/\/chat\/completions.*$/, "");
@@ -84,6 +92,48 @@ function loadModelSpecificConfig(model: string): AzureOpenAIConfig | null {
 }
 
 /**
+ * Normalize model name from environment variable key
+ * Handles the case where both dots and dashes are converted to underscores
+ * by checking against the model registry to find the correct model name
+ * 
+ * Example: GPT_5_2 -> tries gpt-5.2 (found in registry) -> returns gpt-5.2
+ *          GPT_4O -> tries gpt-4o (found in registry) -> returns gpt-4o
+ */
+function normalizeModelNameFromEnvKey(modelKey: string): string {
+  const lowerKey = modelKey.toLowerCase();
+  
+  // Try all possible combinations of replacing underscores with dashes and dots
+  // Start with the most likely pattern: last underscore might be a dot (e.g., gpt-5.2)
+  const parts = lowerKey.split("_");
+  
+  // Strategy: Try replacing the last underscore with a dot first (common pattern: gpt-5.2)
+  if (parts.length >= 3) {
+    const lastTwo = parts.slice(-2).join(".");
+    const rest = parts.slice(0, -2).join("-");
+    const withDot = `${rest}-${lastTwo}`;
+    if (withDot in MODEL_REGISTRY) {
+      return withDot;
+    }
+  }
+  
+  // Try all dashes (default conversion)
+  const withDashes = lowerKey.replace(/_/g, "-");
+  if (withDashes in MODEL_REGISTRY) {
+    return withDashes;
+  }
+  
+  // Try all dots (unlikely but possible)
+  const withDots = lowerKey.replace(/_/g, ".");
+  if (withDots in MODEL_REGISTRY) {
+    return withDots;
+  }
+  
+  // If no match found in registry, return dash version (original behavior)
+  // This allows custom model names not in the registry
+  return withDashes;
+}
+
+/**
  * Load all model-specific configurations from environment
  */
 function loadAllModelConfigs(): Map<string, AzureOpenAIConfig> {
@@ -94,7 +144,8 @@ function loadAllModelConfigs(): Map<string, AzureOpenAIConfig> {
     if (key.startsWith("AZURE_OPENAI_ENDPOINT_") && value) {
       // Extract model name from key (e.g., AZURE_OPENAI_ENDPOINT_GPT_4O -> gpt-4o)
       const modelKey = key.replace("AZURE_OPENAI_ENDPOINT_", "");
-      const modelName = modelKey.toLowerCase().replace(/_/g, "-");
+      // Use smart normalization that checks model registry
+      const modelName = normalizeModelNameFromEnvKey(modelKey);
 
       const apiKeyKey = `AZURE_OPENAI_API_KEY_${modelKey}`;
       const apiVersionKey = `AZURE_OPENAI_API_VERSION_${modelKey}`;
@@ -171,9 +222,7 @@ export function loadProviderConfig(): ProviderEnvConfig {
 
   const config: ProviderEnvConfig = {
     azure_openai: {
-      endpoint: endpoint || getEnvVar("AZURE_OPENAI_ENDPOINT"),
-      deployment: deployment || getEnvVar("AZURE_OPENAI_DEPLOYMENT", "gpt-5-nano"),
-      api_key: process.env.AZURE_OPENAI_API_KEY,
+      deployment: deployment || process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-5-nano",
       api_version: process.env.AZURE_OPENAI_API_VERSION || "2024-12-01-preview",
       auth_type: (process.env.AZURE_OPENAI_AUTH_TYPE || "api-key") as "api-key" | "aad",
     },
@@ -218,37 +267,65 @@ export function buildProviderConfig(
   switch (provider) {
     case "azure-openai": {
       const azureConfig = envConfig.azure_openai;
-      let endpoint = requestEndpoint || azureConfig.endpoint;
-      let apiKey = azureConfig.api_key;
-      let apiVersion = requestApiVersion || azureConfig.api_version;
-      let authType = azureConfig.auth_type;
+      
+      // Model name is required - fail fast if not provided
+      if (!modelName) {
+        throw new Error(
+          "Model name is required for Azure OpenAI provider. " +
+          "Please specify a model in your request or use a task_profile that resolves to a model."
+        );
+      }
+
+      // Check if there's a model-specific configuration - REQUIRED
+      const modelConfig = envConfig.azure_openai_models.get(modelName.toLowerCase());
+      if (!modelConfig) {
+        const modelEnvKey = modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+        throw new Error(
+          `No configuration found for model: ${modelName}. ` +
+          `Please set the following environment variables:\n` +
+          `  - AZURE_OPENAI_ENDPOINT_${modelEnvKey}\n` +
+          `  - AZURE_OPENAI_API_KEY_${modelEnvKey}\n` +
+          `  - AZURE_OPENAI_API_VERSION_${modelEnvKey} (optional, defaults to ${azureConfig.api_version})\n` +
+          `  - AZURE_OPENAI_AUTH_TYPE_${modelEnvKey} (optional, defaults to ${azureConfig.auth_type})`
+        );
+      }
+
+      // Use model-specific configuration
+      let endpoint = requestEndpoint || modelConfig.endpoint;
+      let apiKey = modelConfig.api_key;
+      let apiVersion = requestApiVersion || modelConfig.api_version;
+      let authType = modelConfig.auth_type;
+      let deployment = requestDeployment || modelName;
+
+      // Validate that API key is present
+      if (!apiKey) {
+        const modelEnvKey = modelName.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+        throw new Error(
+          `API key is missing for model: ${modelName}. ` +
+          `Please set AZURE_OPENAI_API_KEY_${modelEnvKey} environment variable.`
+        );
+      }
 
       // Normalize endpoint for lookup
       const normalizedEndpoint = normalizeAzureEndpoint(endpoint);
 
-      // Priority 1: Check if there's a model-specific configuration
-      if (modelName) {
-        const modelConfig = envConfig.azure_openai_models.get(modelName.toLowerCase());
-        if (modelConfig) {
-          endpoint = modelConfig.endpoint;
-          apiKey = modelConfig.api_key || apiKey;
-          apiVersion = modelConfig.api_version;
-          authType = modelConfig.auth_type;
-        }
-      }
-
-      // Priority 2: Check if there's an endpoint-specific configuration
+      // Priority 2: Check if there's an endpoint-specific configuration (for API key override)
       const endpointConfig = envConfig.azure_openai_endpoints.get(normalizedEndpoint);
-      if (endpointConfig) {
-        apiKey = endpointConfig.api_key || apiKey;
-        apiVersion = endpointConfig.api_version;
-        authType = endpointConfig.auth_type;
+      if (endpointConfig && endpointConfig.api_key) {
+        apiKey = endpointConfig.api_key;
+        // Use endpoint-specific API version if provided
+        if (endpointConfig.api_version) {
+          apiVersion = endpointConfig.api_version;
+        }
+        if (endpointConfig.auth_type) {
+          authType = endpointConfig.auth_type;
+        }
       }
 
       return {
         provider: "azure-openai",
         endpoint: endpoint,
-        deployment: requestDeployment || azureConfig.deployment,
+        deployment: deployment,
         apiKey: apiKey,
         apiVersion: apiVersion,
         authType: authType,

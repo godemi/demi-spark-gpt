@@ -104,7 +104,7 @@ describe("redactSecrets", () => {
 describe("logRequest", () => {
   it("should log request with all fields", () => {
     const context = createMockInvocationContext();
-    const logSpy = vi.spyOn(context.log, "info");
+    const logSpy = vi.mocked(context.log);
 
     logRequest(context, {
       requestId: "req-123",
@@ -127,7 +127,7 @@ describe("logRequest", () => {
 
   it("should log request with minimal fields", () => {
     const context = createMockInvocationContext();
-    const logSpy = vi.spyOn(context.log, "info");
+    const logSpy = vi.mocked(context.log);
 
     logRequest(context, {
       requestId: "req-123",
@@ -143,7 +143,7 @@ describe("logRequest", () => {
 describe("logResponse", () => {
   it("should log successful response", () => {
     const context = createMockInvocationContext();
-    const logSpy = vi.spyOn(context.log, "info");
+    const logSpy = vi.mocked(context.log);
 
     logResponse(context, {
       requestId: "req-123",
@@ -162,7 +162,7 @@ describe("logResponse", () => {
 
   it("should log failed response", () => {
     const context = createMockInvocationContext();
-    const logSpy = vi.spyOn(context.log, "error");
+    const logSpy = vi.mocked(context.log);
 
     logResponse(context, {
       requestId: "req-123",

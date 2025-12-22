@@ -46,6 +46,7 @@ az config set extension.use_dynamic_install=yes_without_prompt
 # Specify your subscription ID and resource group here
 SUBSCRIPTION_ID="f72aad8c-7a1f-498b-8a19-7a25231523cf"
 RESOURCE_GROUP="demi"
+FUNCTION_APP_NAME="demigptnodets"
 
 echo "Selecting subscription with ID: $SUBSCRIPTION_ID"
 az account set --subscription "$SUBSCRIPTION_ID"
@@ -83,14 +84,14 @@ echo "Building the project..."
 npm run build
 
 # Prompt before publishing the function
-read -p "Are you sure you want to publish and overwrite the function 'demisparkgpt' on Azure? [y/N] " publish_choice
+read -p "Are you sure you want to publish and overwrite the function '$FUNCTION_APP_NAME' on Azure? [y/N] " publish_choice
 if [[ "$publish_choice" != "y" && "$publish_choice" != "Y" ]]; then
   echo "Publish process aborted by user."
   exit 0
 fi
 
 # Publish the functionapp to Azure
-echo "Publishing Azure Function 'demisparkgpt' to resource group '$RESOURCE_GROUP'..."
-func azure functionapp publish demisparkgpt
+echo "Publishing Azure Function '$FUNCTION_APP_NAME' to resource group '$RESOURCE_GROUP'..."
+func azure functionapp publish "$FUNCTION_APP_NAME"
 
 echo "Deployment complete."

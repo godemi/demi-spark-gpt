@@ -18,7 +18,13 @@ export const AttachmentSchema = z.object({
   filename: z.string().optional(),
   alt: z.string().optional(),
   size_bytes: z.number().optional(),
-});
+}).refine(
+  (data) => data.data !== undefined || data.url !== undefined,
+  {
+    message: "Either 'data' or 'url' must be specified for attachment",
+    path: ["data"],
+  }
+);
 
 export type Attachment = z.infer<typeof AttachmentSchema>;
 
@@ -72,13 +78,19 @@ export type ContentPart = z.infer<typeof ContentPartSchema>;
  */
 export const ChatMessageSchema = z.object({
   role: z.enum(["system", "user", "assistant", "tool"]),
-  content: z.union([z.string(), z.array(ContentPartSchema)]),
+  content: z.union([z.string(), z.array(ContentPartSchema), z.null()]).optional(),
   name: z.string().optional(),
   tool_calls: z.array(ToolCallSchema).optional(),
   tool_call_id: z.string().optional(),
   // HALO extension: attachments for easier API usage
   attachments: z.array(AttachmentSchema).optional(),
-});
+}).refine(
+  (data) => data.content !== undefined || data.tool_calls !== undefined || data.role === "tool",
+  {
+    message: "Message must have either content, tool_calls, or be a tool message",
+    path: ["content"],
+  }
+);
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
@@ -197,8 +209,11 @@ export const ChatCompletionRequestSchema = z.object({
   system_guardrails_enabled: z.boolean().default(false),
   guardrail_profile: z.string().optional(),
 }).refine(
-  (data) => data.model || data.task_profile,
-  { message: "Either 'model' or 'task_profile' must be specified" }
+  (data) => data.model !== undefined || data.task_profile !== undefined,
+  {
+    message: "Either 'model' or 'task_profile' must be specified",
+    path: ["model"], // Set path to model field for better error reporting
+  }
 );
 
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;

@@ -14,9 +14,13 @@ import {
   streamingRequest,
 } from "../../fixtures/requests/chatCompletionRequests";
 
-vi.mock("../../../providers", () => ({
-  getProviderAdapter: vi.fn(),
-}));
+vi.mock("../../../providers", async () => {
+  const actual = await vi.importActual<typeof import("../../../providers")>("../../../providers");
+  return {
+    ...actual,
+    getProviderAdapter: vi.fn(),
+  };
+});
 
 /**
  * End-to-end tests for complete request flow
@@ -26,6 +30,11 @@ describe("Chat Completions E2E", () => {
   let mockAdapter: ReturnType<typeof createMockProviderAdapter>;
 
   beforeEach(() => {
+    // Set up required environment variables
+    process.env.AZURE_OPENAI_ENDPOINT = "https://test.openai.azure.com";
+    process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-nano";
+    process.env.AZURE_OPENAI_API_KEY = "test-api-key";
+    process.env.AZURE_OPENAI_API_VERSION = "2024-12-01-preview";
     context = createMockInvocationContext();
     mockAdapter = createMockProviderAdapter();
     vi.mocked(getProviderAdapter).mockReturnValue(mockAdapter);

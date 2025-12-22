@@ -126,6 +126,7 @@ describe("loadProviderConfig", () => {
   it("should normalize endpoint with query parameters", () => {
     process.env.AZURE_OPENAI_ENDPOINT =
       "https://test.openai.azure.com/openai/deployments/gpt-5.2/chat/completions?api-version=2024-12-01-preview";
+    delete process.env.AZURE_OPENAI_DEPLOYMENT; // Clear to test extraction from URL
 
     const config = loadProviderConfig();
 
@@ -249,5 +250,82 @@ describe("buildProviderConfig", () => {
 
     expect(config.model).toBe("custom-model");
     expect(config.deployment).toBe("custom-model");
+  });
+
+  it("should load model-specific configuration", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://default.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY = "default-key";
+    process.env.AZURE_OPENAI_ENDPOINT_GPT_4O = "https://gpt4o.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_GPT_4O = "gpt4o-key";
+    process.env.AZURE_OPENAI_API_VERSION_GPT_4O = "2024-10-21";
+
+    const config = buildProviderConfig("azure-openai", undefined, undefined, undefined, "gpt-4o");
+
+    expect(config.endpoint).toBe("https://gpt4o.openai.azure.com");
+    expect(config.apiKey).toBe("gpt4o-key");
+    expect(config.apiVersion).toBe("2024-10-21");
+  });
+
+  it("should fallback to default config when model-specific config not found", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://default.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY = "default-key";
+    process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-nano";
+
+    const config = buildProviderConfig("azure-openai", undefined, undefined, undefined, "gpt-4o");
+
+    expect(config.endpoint).toBe("https://default.openai.azure.com");
+    expect(config.apiKey).toBe("default-key");
+  });
+
+  it("should load all model-specific configurations", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://default.openai.azure.com";
+    process.env.AZURE_OPENAI_ENDPOINT_GPT_4O = "https://gpt4o.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_GPT_4O = "gpt4o-key";
+    process.env.AZURE_OPENAI_ENDPOINT_GPT_5_2 = "https://gpt52.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_GPT_5_2 = "gpt52-key";
+
+    const envConfig = loadProviderConfig();
+
+    expect(envConfig.azure_openai_models.has("gpt-4o")).toBe(true);
+    expect(envConfig.azure_openai_models.has("gpt-5.2")).toBe(true);
+    expect(envConfig.azure_openai_models.get("gpt-4o")?.endpoint).toBe("https://gpt4o.openai.azure.com");
+    expect(envConfig.azure_openai_models.get("gpt-5.2")?.endpoint).toBe("https://gpt52.openai.azure.com");
+  });
+
+  it("should use endpoint-based configuration when endpoint matches", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://default.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY = "default-key";
+    // Endpoint-based config (using endpoint hash/identifier)
+    process.env.AZURE_OPENAI_ENDPOINT_CUSTOM = "https://custom.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_CUSTOM = "custom-key";
+    process.env.AZURE_OPENAI_API_VERSION_CUSTOM = "2024-11-01";
+
+    const config = buildProviderConfig("azure-openai", "https://custom.openai.azure.com");
+
+    // Should use the custom endpoint config
+    expect(config.endpoint).toBe("https://custom.openai.azure.com");
+    expect(config.apiKey).toBe("custom-key");
+    expect(config.apiVersion).toBe("2024-11-01");
+  });
+
+  it("should prioritize model-specific config over endpoint config", () => {
+    process.env.AZURE_OPENAI_ENDPOINT = "https://default.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY = "default-key";
+    process.env.AZURE_OPENAI_ENDPOINT_GPT_4O = "https://gpt4o.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_GPT_4O = "gpt4o-key";
+    process.env.AZURE_OPENAI_ENDPOINT_CUSTOM = "https://custom.openai.azure.com";
+    process.env.AZURE_OPENAI_API_KEY_CUSTOM = "custom-key";
+
+    const config = buildProviderConfig(
+      "azure-openai",
+      "https://custom.openai.azure.com",
+      undefined,
+      undefined,
+      "gpt-4o"
+    );
+
+    // Model-specific should take priority
+    expect(config.endpoint).toBe("https://gpt4o.openai.azure.com");
+    expect(config.apiKey).toBe("gpt4o-key");
   });
 });

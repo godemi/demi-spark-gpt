@@ -4,7 +4,7 @@ This guide explains how to run and test your Azure Functions locally on your dev
 
 ## Prerequisites
 
-1. **Node.js 20+** - [Download Node.js](https://nodejs.org/)
+1. **Node.js 22+** - [Download Node.js](https://nodejs.org/) (Node.js 20 reaches EOL April 30, 2026)
 2. **Azure Functions Core Tools** - Already included in `devDependencies`
    - If not installed globally, it will use the local version from `node_modules`
 3. **Dependencies installed** - Run `npm install` if you haven't already
@@ -210,7 +210,7 @@ Check for any TypeScript compilation errors in the output.
 
 1. Make sure all dependencies are installed: `npm install`
 2. Check that `local.settings.json` exists and is properly formatted
-3. Verify Node.js version: `node --version` (should be 20+)
+3. Verify Node.js version: `node --version` (should be 22+)
 4. Check the console output for specific error messages
 
 ### Authentication Issues

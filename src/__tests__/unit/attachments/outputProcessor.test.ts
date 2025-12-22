@@ -154,7 +154,8 @@ describe("createAttachmentFromUrl", () => {
     const attachment = createAttachmentFromUrl("https://example.com");
 
     expect(attachment.filename).toBeDefined();
-    expect(attachment.filename).toContain("image");
+    // When URL has no path, it uses the domain name or falls back to image-{timestamp}.png
+    expect(attachment.filename).toMatch(/^(example\.com|image-\d+\.png)$/);
   });
 });
 

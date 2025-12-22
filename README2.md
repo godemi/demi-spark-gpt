@@ -56,7 +56,7 @@ cd demisparkgpt/SPARK/AzureFunctions/demisparkgpt_node_ts
 
 ## Prerequisites
 
-- Node.js 20.x or later
+- Node.js 22.x or later (Node.js 20 reaches EOL April 30, 2026)
 - npm 9.x or later
 - Azure Functions Core Tools v4
 - Azure CLI

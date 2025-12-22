@@ -54,8 +54,10 @@ describe("HALOTelemetry", () => {
       });
 
       expect(consoleSpy).toHaveBeenCalled();
-      const callArgs = consoleSpy.mock.calls[0][0];
-      expect(callArgs).toContain("req-123");
+      // Check that the request data is logged (could be in first or second argument)
+      const allArgs = consoleSpy.mock.calls[0];
+      const loggedData = allArgs.find((arg) => typeof arg === "object" && arg !== null) || allArgs.join(" ");
+      expect(JSON.stringify(loggedData)).toContain("req-123");
       consoleSpy.mockRestore();
     });
 

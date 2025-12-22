@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { chatCompletionsHandler } from "../../../handlers/chatCompletionsHandler";
 import {
   createMockHttpRequest,
@@ -13,18 +13,35 @@ import {
   requestWithGuardrails,
   streamingRequest,
 } from "../../fixtures/requests/chatCompletionRequests";
-vi.mock("../../../providers", () => ({
-  getProviderAdapter: vi.fn(),
-}));
+vi.mock("../../../providers", async () => {
+  const actual = await vi.importActual<typeof import("../../../providers")>("../../../providers");
+  return {
+    ...actual,
+    getProviderAdapter: vi.fn(),
+  };
+});
 
 describe("chatCompletionsHandler", () => {
   let context: ReturnType<typeof createMockInvocationContext>;
   let mockAdapter: ReturnType<typeof createMockProviderAdapter>;
+  const originalEnv = process.env;
 
   beforeEach(() => {
+    // Set up required environment variables
+    process.env = {
+      ...originalEnv,
+      AZURE_OPENAI_ENDPOINT: "https://test.openai.azure.com",
+      AZURE_OPENAI_DEPLOYMENT: "gpt-5-nano",
+      AZURE_OPENAI_API_KEY: "test-api-key",
+      AZURE_OPENAI_API_VERSION: "2024-12-01-preview",
+    };
     context = createMockInvocationContext();
     mockAdapter = createMockProviderAdapter();
     vi.mocked(getProviderAdapter).mockReturnValue(mockAdapter);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe("CORS preflight", () => {
@@ -78,7 +95,8 @@ describe("chatCompletionsHandler", () => {
 
       expect(response.status).toBe(400);
       const body = JSON.parse(response.body as string);
-      expect(body.error.code).toBe("UNKNOWN_PROVIDER");
+      // Schema validation happens first, so invalid enum value fails with INVALID_PARAMETERS
+      expect(body.error.code).toBe("INVALID_PARAMETERS");
     });
 
     it("should reject unknown model", async () => {
@@ -305,7 +323,8 @@ describe("chatCompletionsHandler", () => {
 
       expect(response.status).toBe(400);
       const body = JSON.parse(response.body as string);
-      expect(body.error.code).toBe("INVALID_TASK_PROFILE");
+      // Schema validation happens first, so invalid enum value fails with INVALID_PARAMETERS
+      expect(body.error.code).toBe("INVALID_PARAMETERS");
     });
 
     it("should apply reasoning_effort from task_profile", async () => {

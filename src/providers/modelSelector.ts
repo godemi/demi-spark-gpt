@@ -93,7 +93,15 @@ export function resolveModel(options: ResolveModelOptions): ResolvedModel {
     };
   }
 
-  // 3. Default model from config
+  // 3. Default model from config (should rarely happen due to schema validation)
+  // This is a fallback, but the request should have specified a model or task_profile
+  if (!defaultModel) {
+    throw new Error(
+      "No model specified in request and no default model configured. " +
+      "Please specify either 'model' or 'task_profile' in your request."
+    );
+  }
+  
   return {
     model: defaultModel,
     deployment: defaultDeployment || defaultModel,
